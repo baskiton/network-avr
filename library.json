@@ -1,0 +1,26 @@
+{
+    "name": "Network",
+    "version": "0.0.1",
+    "description": "Network for AVR.",
+    "keywords": "avr, baskiton, ethernet, enc28j60, 28j60",
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/baskiton/network-avr.git"
+    },
+    "authors":
+    [
+        {
+            "name": "Alexander Baskikh",
+            "email": "baskiton@mail.ru",
+            "url": "https://t.me/baskiton",
+            "maintainer": true
+        }
+    ],
+    "license": "MIT",
+    "frameworks": ["arduino"],
+    "platforms": ["atmelavr"],
+    "dependencies": {
+        "defines-avr": "^1.2.0"
+    }
+}
