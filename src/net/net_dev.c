@@ -3,8 +3,9 @@
 #include <string.h>
 
 #include <defines.h>
-#include <net/net.h>
-#include <net/net_dev.h>
+
+#include "net/net.h"
+#include "net/net_dev.h"
 
 /*!
  * @brief Register a network device

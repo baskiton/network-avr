@@ -4,8 +4,10 @@
 #include <stdint.h>
 
 #include <defines.h>
-#include <net/ether.h>
-#include <net/net_dev.h>
+
+#include "net/ether.h"
+#include "net/net_dev.h"
+#include "net/socket.h"
 
 #define htons(x) bswap_16(x)
 #define htonl(x) bswap_32(x)
@@ -13,6 +15,13 @@
 #define ntohs(x) bswap_16(x)
 #define ntohl(x) bswap_32(x)
 #define ntohll(x) bswap_64(x)
+
+/**
+ * 
+ */
+struct protocol_ops {
+    int8_t (*bind)(sk_t *socket, struct sock_addr *addr);
+};
 
 /**
  * @brief

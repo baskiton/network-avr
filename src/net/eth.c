@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <net/ether.h>
-#include <net/net.h>
-#include <net/net_dev.h>
+#include "net/ether.h"
+#include "net/net.h"
+#include "net/net_dev.h"
 
 /*!
  * @brief Create the Ethernet Header

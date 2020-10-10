@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <net/net.h>
-#include <net/ether.h>
+#include "net/net.h"
+#include "net/ether.h"
 
 /*!
  * @brief Allocate a network buffer for rx on a specific device

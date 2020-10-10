@@ -29,9 +29,11 @@ struct net_dev_ops_s {
 
 /* Operations for Layer 2 header */
 struct header_ops_s {
-    void (*create)(struct net_buff_s *net_buf, int16_t type,
-                   const void *mac_d, const void *mac_s,
-                   int16_t len);
+    int8_t (*create)(struct net_buff_s *net_buf, int16_t type,
+                     const void *mac_d, const void *mac_s,
+                     int16_t len);
+    // int8_t (*parse)(const struct net_buff_s *net_buf, uint8_t *h_addr);
+    // uint16_t (*parse_potocol)(const struct net_buff_s *net_buf);
 };
 
 /*!
@@ -41,14 +43,14 @@ struct header_ops_s {
  * @param netdev_ops Callbacks for control functions
  * @param header_ops Callbacks for eth header functions
  */
-struct net_dev_s {
+typedef struct net_dev_s {
     struct {
         uint8_t link_status : 1;
     } flags;
     void *data;
     const struct net_dev_ops_s *netdev_ops;
     const struct header_ops_s *header_ops;
-};
+} net_dev_t;
 
 inline bool net_check_link(struct net_dev_s *net_dev) {
     return net_dev->flags.link_status;
