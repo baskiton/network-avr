@@ -17,10 +17,14 @@
 #define ntohll(x) bswap_64(x)
 
 /**
+ * @brief
+ * @param bind
  * 
+ * TODO: разобраться, почему здесь не видны типы из хедера 'socket.h'
  */
 struct protocol_ops {
-    int8_t (*bind)(sk_t *socket, struct sock_addr *addr);
+    int8_t (*bind)(void *sk, const void *addr);
+    // int8_t (*bind)(sk_t *sk, const struct sock_addr *addr);
 };
 
 /**

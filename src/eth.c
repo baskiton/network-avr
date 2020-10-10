@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "net/ether.h"
-#include "net/net.h"
-#include "net/net_dev.h"
+#include <net/ether.h>
+#include <net/net.h>
+#include <net/net_dev.h>
 
 /*!
  * @brief Create the Ethernet Header
@@ -15,9 +15,9 @@
  * @param mac_s Source MAC address
  * @param len Packet length
  */
-void eth_header_create(struct net_buff_s *net_buff, int16_t type,
-                       const void *mac_d, const void *mac_s,
-                       int16_t len) {
+int8_t eth_header_create(struct net_buff_s *net_buff, int16_t type,
+                         const void *mac_d, const void *mac_s,
+                         int16_t len) {
     struct eth_header_s *header_p;
 
     header_p = (struct eth_header_s *)(net_buff->head + net_buff->mac_header);
@@ -29,6 +29,7 @@ void eth_header_create(struct net_buff_s *net_buff, int16_t type,
     else
         header_p->eth_type = htons(type);
     
+    return 0;
 }
 
 const struct header_ops_s eth_header_ops = {

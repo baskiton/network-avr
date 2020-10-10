@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "socket.h"
+#include "net/socket.h"
 
 /*!
  * @brief Create the Socket
@@ -44,6 +44,10 @@ int16_t send_to(sk_t *sk, const char *buff, size_t buff_size,
     return 0;
 }
 
+int16_t send(sk_t *sk, const char *buff, size_t buff_size) {
+    return send_to(sk, buff, buff_size, NULL);
+}
+
 /*!
  * @brief
  * @param sk Pointer to socket
@@ -56,4 +60,8 @@ int16_t recv_from(sk_t *sk, char *buff, size_t buff_size,
                   struct sock_addr *sk_addr) {
 
     return 0;
+}
+
+int16_t recv(sk_t *sk, char *buff, size_t buff_size) {
+    return recv_from(sk, buff, buff_size, NULL);
 }

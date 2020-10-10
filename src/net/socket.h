@@ -1,6 +1,6 @@
 /**
  * SOCKET: Transport Layer Interface (OSI Layer 4)
-*/
+ */
 
 #ifndef SOCKET_H
 #define SOCKET_H
@@ -37,14 +37,10 @@ int8_t bind(sk_t *sk, const struct sock_addr *sk_addr);
 // int8_t connect(sk_t *sk, const struct sock_addr *sk_addr);
 int16_t send_to(sk_t *sk, const char *buff, size_t buff_size,
                 struct sock_addr *sk_addr);
-int16_t send(sk_t *sk, const char *buff, size_t buff_size) {
-    return send_to(sk, buff, buff_size, NULL);
-}
+int16_t send(sk_t *sk, const char *buff, size_t buff_size);
 int16_t recv_from(sk_t *sk, char *buff, size_t buff_size,
                   struct sock_addr *sk_addr);
-int16_t recv(sk_t *sk, char *buff, size_t buff_size) {
-    return recv_from(sk, buff, buff_size, NULL);
-}
+int16_t recv(sk_t *sk, char *buff, size_t buff_size);
 // int8_t listen(sk_t *sk);
 int8_t shutdown(sk_t *sk, uint8_t flag);
 
