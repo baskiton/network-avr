@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 
 #include <stdint.h>
 #include <string.h>
@@ -32,7 +33,7 @@ int8_t eth_header_create(struct net_buff_s *net_buff, int16_t type,
     return 0;
 }
 
-const struct header_ops_s eth_header_ops = {
+const static struct header_ops_s eth_header_ops PROGMEM = {
     .create = eth_header_create
 };
 
