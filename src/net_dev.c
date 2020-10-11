@@ -24,7 +24,7 @@ struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *))
         return NULL;
     }
 
-    priv = ndev + size;
+    priv = (void *)ndev + sizeof(struct net_dev_s);
     memset(ndev, 0, sizeof(struct net_dev_s) + size);
     ndev->priv = priv;
     setup(ndev);

@@ -33,7 +33,7 @@ int8_t eth_header_create(struct net_buff_s *net_buff, int16_t type,
     return 0;
 }
 
-const static struct header_ops_s eth_header_ops PROGMEM = {
+static const struct header_ops_s eth_header_ops PROGMEM = {
     .create = eth_header_create
 };
 
