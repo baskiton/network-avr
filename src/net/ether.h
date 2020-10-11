@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#include "net/net.h"
-#include "net/net_dev.h"
+#include "net.h"
+#include "net_dev.h"
 
 #define ETH_MAC_LEN 6U
 #define ETH_HDR_LEN 14U
@@ -24,5 +24,6 @@ int8_t eth_header_create(struct net_buff_s *net_buf, int16_t type,
                          const void *mac_d, const void *mac_s,
                          int16_t len);
 void ether_setup(struct net_dev_s *dev);
+struct net_dev_s *ether_dev_alloc(uint8_t size);
 
 #endif  /* !ETHER_H */

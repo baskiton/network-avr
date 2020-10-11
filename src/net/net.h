@@ -5,9 +5,14 @@
 
 #include <defines.h>
 
-#include "net/ether.h"
-#include "net/net_dev.h"
-#include "net/socket.h"
+#include "ether.h"
+#include "net_dev.h"
+#include "socket.h"
+
+#define IN_ADDR_ANY ((uint32_t)0x00000000)          // 0.0.0.0
+#define IN_ADDR_BROADCAST ((uint32_t)0xFFFFFFFF)    // 255.255.255.255
+#define IN_ADDR_NONE ((uint32_t)0xFFFFFFFF)         // 255.255.255.255
+#define IN_ADDR_LOOPBACK ((uint32_t)0x7F000001)     // 127.0.0.1
 
 #define htons(x) bswap_16(x)
 #define htonl(x) bswap_32(x)
@@ -16,15 +21,15 @@
 #define ntohl(x) bswap_32(x)
 #define ntohll(x) bswap_64(x)
 
+struct soket;
+struct sock_addr;
+
 /**
  * @brief
  * @param bind
- * 
- * TODO: разобраться, почему здесь не видны типы из хедера 'socket.h'
  */
 struct protocol_ops {
-    int8_t (*bind)(void *sk, const void *addr);
-    // int8_t (*bind)(sk_t *sk, const struct sock_addr *addr);
+    int8_t (*bind)(struct soket *sk, const struct sock_addr *addr);
 };
 
 /**

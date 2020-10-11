@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <net/ether.h>
-#include <net/net.h>
-#include <net/net_dev.h>
+#include "net/ether.h"
+#include "net/net.h"
+#include "net/net_dev.h"
 
 /*!
  * @brief Create the Ethernet Header
@@ -42,4 +42,12 @@ const struct header_ops_s eth_header_ops = {
  */
 void ether_setup(struct net_dev_s *dev) {
     dev->header_ops = &eth_header_ops;
+}
+
+/*!
+ * @brief Allocate & Set Ethernet Device
+ * @param size Size of private data
+ */
+struct net_dev_s *ether_dev_alloc(uint8_t size) {
+    return net_dev_alloc(size, ether_setup);
 }

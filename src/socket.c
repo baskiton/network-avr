@@ -10,7 +10,7 @@
  * @param type Type of socket
  * @return Pointer to socket or NULL is error
  */
-sk_t *socket(sk_t *sk, uint8_t family, uint8_t type) {
+struct soket *socket(struct soket *sk, uint8_t family, uint8_t type) {
 
     return 0;
 }
@@ -21,7 +21,7 @@ sk_t *socket(sk_t *sk, uint8_t family, uint8_t type) {
  * @param sk_addr pointer to socket address structure
  * @return 0 if success; -1 if error
  */
-int8_t bind(sk_t *sk, const struct sock_addr *sk_addr) {
+int8_t bind(struct soket *sk, const struct sock_addr *sk_addr) {
     int8_t err = -1;
 
     if (sk) {
@@ -38,13 +38,13 @@ int8_t bind(sk_t *sk, const struct sock_addr *sk_addr) {
  * @param sk_addr pointer to socket address structure
  * @return Count of sending bytes
  */
-int16_t send_to(sk_t *sk, const char *buff, size_t buff_size,
+int16_t send_to(struct soket *sk, const char *buff, size_t buff_size,
                 struct sock_addr *sk_addr) {
 
     return 0;
 }
 
-int16_t send(sk_t *sk, const char *buff, size_t buff_size) {
+int16_t send(struct soket *sk, const char *buff, size_t buff_size) {
     return send_to(sk, buff, buff_size, NULL);
 }
 
@@ -56,12 +56,12 @@ int16_t send(sk_t *sk, const char *buff, size_t buff_size) {
  * @param sk_addr pointer to socket address structure
  * @return Count of received bytes
  */
-int16_t recv_from(sk_t *sk, char *buff, size_t buff_size,
+int16_t recv_from(struct soket *sk, char *buff, size_t buff_size,
                   struct sock_addr *sk_addr) {
 
     return 0;
 }
 
-int16_t recv(sk_t *sk, char *buff, size_t buff_size) {
+int16_t recv(struct soket *sk, char *buff, size_t buff_size) {
     return recv_from(sk, buff, buff_size, NULL);
 }
