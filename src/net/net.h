@@ -36,9 +36,9 @@ struct protocol_ops {
  * @brief
  * @param dev Network device
  * @param len Packet length
- * @param transport_header Offset from start frame to Transport Layer header (layer 4)
- * @param network_header Offset from start frame to Network Layer header (layer 3)
- * @param mac_header Offset from start frame to Data Link Layer header (layer 2)
+ * @param transport_hdr_offset Offset from start frame to Transport Layer header (layer 4)
+ * @param network_hdr_offset Offset from start frame to Network Layer header (layer 3)
+ * @param mac_hdr_offset Offset from start frame to Data Link Layer header (layer 2)
  * @param head Pointer to start of ethernet frame (data link layer - layer 2)
  * @param data Pointer to actual data
  */
@@ -47,15 +47,15 @@ struct net_buff_s {
 
     uint16_t len;
 
-    uint8_t transport_header;
-    uint8_t network_header;
-    uint8_t mac_header;
+    uint8_t transport_hdr_offset;
+    uint8_t network_hdr_offset;
+    uint8_t mac_hdr_offset;
 
     uint8_t *head;
     uint8_t *data;
 };
 
-struct net_buff_s *net_alloc_buff(struct net_dev_s *net_dev, uint16_t size);
+struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size);
 void net_free_buff(struct net_buff_s *buff);
 
 #endif  /* !NET_H */

@@ -21,7 +21,7 @@ int8_t eth_header_create(struct net_buff_s *net_buff, int16_t type,
                          int16_t len) {
     struct eth_header_s *header_p;
 
-    header_p = (struct eth_header_s *)(net_buff->head + net_buff->mac_header);
+    header_p = (struct eth_header_s *)(net_buff->head + net_buff->mac_hdr_offset);
     memcpy(header_p->mac_dest, mac_d, ETH_MAC_LEN);
     memcpy(header_p->mac_src, mac_s, ETH_MAC_LEN);
 
@@ -33,7 +33,8 @@ int8_t eth_header_create(struct net_buff_s *net_buff, int16_t type,
     return 0;
 }
 
-static const struct header_ops_s eth_header_ops PROGMEM = {
+/** TODO: move this to PROGMEM */
+static const struct header_ops_s eth_header_ops = {
     .create = eth_header_create
 };
 

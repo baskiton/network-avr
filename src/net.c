@@ -11,13 +11,14 @@
  * @param size Size to allocate (for ethernet is eth header, data, padding, crc)
  * @return Pointer to buffer or NULL if not enough memory
  */
-struct net_buff_s *net_alloc_buff(struct net_dev_s *net_dev, uint16_t size) {
+struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size) {
     struct net_buff_s *buff;
     uint8_t *head;
 
     buff = malloc(sizeof(struct net_buff_s));
-    if (!buff)
-        goto end;
+    if (!buff) {
+        return NULL;
+    }
     
     head = malloc(size);
     if (!head) {
@@ -26,11 +27,9 @@ struct net_buff_s *net_alloc_buff(struct net_dev_s *net_dev, uint16_t size) {
         goto end;
     }
     
-    memset(buff, 0, sizeof(struct net_buff_s));
-
-    buff->head = head;
-    buff->data = head;
-    buff->mac_header = buff->network_header = buff->transport_header = (uint8_t)-1U;
+    buff->head = buff->data = head;
+    buff->mac_hdr_offset = buff->network_hdr_offset = buff->transport_hdr_offset = (uint8_t)-1U;
+    buff->len = size;
     buff->net_dev = net_dev;
 
 end:

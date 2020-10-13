@@ -16,7 +16,6 @@ struct net_dev_s *curr_net_dev = NULL;  // global current network device
  */
 struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *)) {
     struct net_dev_s *ndev;
-    void *priv;
 
     ndev = malloc(sizeof(struct net_dev_s) + size);
     if (!ndev) {
@@ -24,9 +23,8 @@ struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *))
         return NULL;
     }
 
-    priv = (void *)ndev + sizeof(struct net_dev_s);
     memset(ndev, 0, sizeof(struct net_dev_s) + size);
-    ndev->priv = priv;
+    ndev->priv = (void *)ndev + sizeof(struct net_dev_s);
     setup(ndev);
 
     return ndev;
@@ -67,4 +65,50 @@ void netdev_unregister(struct net_dev_s *net_dev) {
     if (net_dev->netdev_ops->stop)
         net_dev->netdev_ops->stop(net_dev);
     curr_net_dev = NULL;
+}
+
+/*!
+ *
+ */
+int8_t netdev_open(struct net_dev_s *net_dev) {
+    int8_t err = 0;
+
+    if (net_dev->flags.up_state)
+        return 0;
+
+    if (net_dev->netdev_ops->open)
+        err = net_dev->netdev_ops->open(net_dev);
+
+    if (!err) {
+        net_dev->flags.up_state = 1;
+        netdev_set_rx_mode(net_dev);
+    }
+
+    return err;
+}
+
+/*!
+ *
+ */
+void netdev_close(struct net_dev_s *net_dev) {
+    if (!net_dev->flags.up_state)
+        return;
+    
+    if (net_dev->netdev_ops->stop)
+        net_dev->netdev_ops->stop(net_dev);
+
+    net_dev->flags.up_state = 0;
+}
+
+/*!
+ *
+ */
+void netdev_set_rx_mode(struct net_dev_s *net_dev) {
+    const struct net_dev_ops_s *ops = net_dev->netdev_ops;
+
+    if (!net_dev->flags.up_state)
+        return;
+    
+    if (ops->set_rx_mode)
+        ops->set_rx_mode(net_dev);
 }
