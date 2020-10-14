@@ -1,3 +1,6 @@
+#include <avr/io.h>
+#include <avr/pgmspace.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,14 +50,18 @@ struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size)
  * @return Pointer to tail of buffer
  */
 void *put_net_buff(struct net_buff_s *net_buff, uint16_t len) {
+    void *old_tail = net_buff->tail;
+
     net_buff->tail += len;
     net_buff->pkt_len += len;
 
     if (net_buff->tail > net_buff->end) {
         /** TODO: error - out of range */
+        printf_P(PSTR("Out of range!!! Stopping...\n"));
+        while (1) {}
         return NULL;
     }
-    return net_buff->tail;
+    return old_tail;
 }
 
 /*!
