@@ -11,13 +11,11 @@
 
 extern struct net_dev_s *curr_net_dev;
 
-enum ndev_rx_mode {
-    RX_RT_BROADCAST,    // receive broadcast & unicast frames filtering (by default)
-    RX_RT_MULTICAST,    // receive multicast & unicast frames filtering
-    RX_RT_UNICAST,      // receive unicast frames filtering
-    RX_RT_ALLMULTI,     // receive broadcast & multicast & unicast frames filtering
-    RX_RT_PROMISC = 7,  // receive all frames promiscuously
-};
+#define RX_RT_BROADCAST (1 << 0)   // receive broadcast & unicast frames filtering (by default)
+#define RX_RT_MULTICAST (1 << 1)   // receive multicast & unicast frames filtering
+#define RX_RT_UNICAST   (1 << 2)   // receive unicast frames filtering
+#define RX_RT_ALLMULTI  (1 << 3)   // receive broadcast & multicast & unicast frames filtering
+#define RX_RT_PROMISC   (1 << 4)// receive all frames promiscuously
 
 struct net_dev_s;
 struct net_buff_s;
@@ -61,8 +59,9 @@ typedef struct net_dev_s {
         uint8_t up_state : 1;       // 1 - is running; 0 - is stopped
         uint8_t link_status : 1;    // 1 - Link i Up; 0 - Link is Down
         uint8_t full_duplex : 1;    // 1 - Full Duplex; 0 - Half Duplex
-        uint8_t rx_mode : 3;        // see ndev_rx_mode enum
+        uint8_t rx_mode : 5;        // see ndev_rx_mode enum
     } flags;
+    uint8_t broadcast[6];
     const struct net_dev_ops_s *netdev_ops;
     const struct header_ops_s *header_ops;
     uint8_t dev_addr[6];    /** FIXME: ETH_MAC_LEN */

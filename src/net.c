@@ -24,22 +24,43 @@ struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size)
     if (!head) {
         free(buff);
         buff = NULL;
-        goto end;
+        return buff;
     }
+
+    memset(buff, 0, ((size_t)&((struct net_buff_s *)0)->head));
     
-    buff->head = buff->data = head;
-    buff->mac_hdr_offset = buff->network_hdr_offset = buff->transport_hdr_offset = (uint8_t)-1U;
-    buff->len = size;
+    buff->head = buff->data = buff->tail = head;
+    buff->end = buff->tail + size;
+    buff->mac_hdr_offset = (uint8_t)-1U;
+    buff->network_hdr_offset = (uint8_t)-1U;
+    buff->transport_hdr_offset = (uint8_t)-1U;
+
     buff->net_dev = net_dev;
 
-end:
     return buff;
+}
+
+/*!
+ * @brief Put a data to the buffer
+ * @param net_buff Buffer to adding
+ * @param len Length of adding data
+ * @return Pointer to tail of buffer
+ */
+void *put_net_buff(struct net_buff_s *net_buff, uint16_t len) {
+    net_buff->tail += len;
+    net_buff->pkt_len += len;
+
+    if (net_buff->tail > net_buff->end) {
+        /** TODO: error - out of range */
+        return NULL;
+    }
+    return net_buff->tail;
 }
 
 /*!
  * @brief Free the allocating memory an Net Buffer
  */
-void net_free_buff(struct net_buff_s *buff) {
-    free(buff->head);
-    free(buff);
+void free_net_buff(struct net_buff_s *net_buff) {
+    free(net_buff->head);
+    free(net_buff);
 }
