@@ -40,6 +40,13 @@ int8_t bind(struct soket *sk, const struct sock_addr *sk_addr) {
  */
 int16_t send_to(struct soket *sk, const char *buff, size_t buff_size,
                 struct sock_addr *sk_addr) {
+    
+    if (!sk) {
+        // errno
+        return -1;
+    }
+
+    /** TODO: */
 
     return 0;
 }
