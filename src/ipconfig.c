@@ -112,6 +112,8 @@ static void dhcp_send_request() {
     net_buff = net_buff_alloc(sizeof(struct dhcp_pkt_s) + ETH_HDR_LEN);
     if (!net_buff) {
         /** TODO: */
+        printf_P(PSTR("Error: IP config: dhcp_send_request: net_buff_alloc: not enough memory\n"));
+        return;
     }
     net_buff->data += ETH_HDR_LEN;
     net_buff->tail += ETH_HDR_LEN;
@@ -153,7 +155,7 @@ static void dhcp_send_request() {
     net_buff->net_dev = curr_net_dev;
     net_buff->protocol = htons(ETH_P_IP);
 
-    if (!netdev_hdr_create(net_buff, curr_net_dev,
+    if (netdev_hdr_create(net_buff, curr_net_dev,
         ntohs(net_buff->protocol),
         curr_net_dev->broadcast, curr_net_dev->dev_addr,
         net_buff->pkt_len)) {
@@ -161,7 +163,7 @@ static void dhcp_send_request() {
         printf_P(PSTR("Error: IP config: device header create error\n"));
         return;
     }
-    if (!netdev_xmit(net_buff)) {
+    if (netdev_xmit(net_buff)) {
         printf_P(PSTR("Error: IP config: transfer failed\n"));
     }
 }
