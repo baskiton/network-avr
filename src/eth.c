@@ -40,7 +40,7 @@ static const struct header_ops_s eth_header_ops = {
 };
 
 /*!
- * @brief Setut the Ethernet Netwirk Device
+ * @brief Setut the Ethernet Network Device
  * @param dev Network device
  */
 void ether_setup(struct net_dev_s *net_dev) {

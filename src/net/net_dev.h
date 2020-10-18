@@ -97,11 +97,26 @@ inline bool net_dev_tx_allowed(struct net_dev_s *net_dev) {
     return net_dev->flags.tx_allow;
 }
 
+/*!
+ *
+ */
+inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
+                                struct net_dev_s *net_dev,
+                                int16_t type,
+                                const void *mac_d, const void *mac_s,
+                                int16_t len) {
+    if (!net_dev->header_ops || net_dev->header_ops->create)
+        return 0;
+    
+    return net_dev->header_ops->create(net_buff, type, mac_d, mac_s, len);
+}
+
 struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *));
 void net_dev_free(struct net_dev_s *net_dev);
 int8_t netdev_register(struct net_dev_s *net_dev);
 void netdev_unregister(struct net_dev_s *net_dev);
 int8_t netdev_open(struct net_dev_s *net_dev);
+void netdev_close(struct net_dev_s *net_dev);
 void netdev_set_rx_mode(struct net_dev_s *net_dev);
 int8_t netdev_xmit(struct net_buff_s *net_buff);
 

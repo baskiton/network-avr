@@ -9,12 +9,11 @@
 #include "net/ether.h"
 
 /*!
- * @brief Allocate a network buffer for rx on a specific device
- * @param dev Network device to receive
- * @param size Size to allocate (for ethernet is eth header, data, padding, crc)
- * @return Pointer to buffer or NULL if not enough memory
+ * @brief Allocate a Network buffer
+ * @param size Size to allocate
+ * @return Pointer to buffer or \a NULL if error
  */
-struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size) {
+struct net_buff_s *net_buff_alloc(uint16_t size) {
     struct net_buff_s *buff;
     uint8_t *head;
 
@@ -38,7 +37,21 @@ struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size)
     buff->network_hdr_offset = (uint8_t)-1U;
     buff->transport_hdr_offset = (uint8_t)-1U;
 
-    buff->net_dev = net_dev;
+    return buff;
+}
+
+/*!
+ * @brief Allocate a network buffer for rx on a specific device
+ * @param dev Network device to receive
+ * @param size Size to allocate (for ethernet is eth header, data, padding, crc)
+ * @return Pointer to buffer or NULL if not enough memory
+ */
+struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size) {
+    struct net_buff_s *buff;
+
+    buff = net_buff_alloc(size);
+    if (buff)
+        buff->net_dev = net_dev;
 
     return buff;
 }
