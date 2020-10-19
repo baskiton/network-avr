@@ -6,6 +6,7 @@
 extern uint32_t my_ip;
 extern uint32_t net_mask;
 extern uint32_t gateway;
+extern uint32_t serv_addr;
 
 int8_t ip_auto_config(void);
 

@@ -4,10 +4,10 @@
 #include <stdint.h>
 
 struct udp_hdr_s {
-    uint16_t port_src;
-    uint16_t port_dst;
-    uint16_t len;
-    uint16_t chks;
+    uint16_t port_src;  // Source port
+    uint16_t port_dst;  // Destination port
+    uint16_t len;       // Datagram length
+    uint16_t chks;      // Checksum
 };
 
 #endif  /* !UDP_H */
