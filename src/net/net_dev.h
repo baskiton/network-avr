@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <defines.h>
 
@@ -42,8 +43,8 @@ struct net_dev_ops_s {
 
 /* Operations for Layer 2 header */
 struct header_ops_s {
-    int8_t (*create)(struct net_buff_s *net_buf, int16_t type,
-                     const void *mac_d, const void *mac_s,
+    int8_t (*create)(struct net_buff_s *net_buf, struct net_dev_s *net_dev,
+                     int16_t type, const void *mac_d, const void *mac_s,
                      int16_t len);
     // int8_t (*parse)(const struct net_buff_s *net_buf, uint8_t *h_addr);
     // uint16_t (*parse_potocol)(const struct net_buff_s *net_buf);
@@ -60,7 +61,7 @@ struct header_ops_s {
 typedef struct net_dev_s {
     struct {
         uint8_t up_state : 1;       // 1 - is running; 0 - is stopped
-        uint8_t link_status : 1;    // 1 - Link i Up; 0 - Link is Down
+        uint8_t link_status : 1;    // 1 - Link is Up; 0 - Link is Down
         uint8_t full_duplex : 1;    // 1 - Full Duplex; 0 - Half Duplex
         uint8_t rx_mode : 5;        // see ndev_rx_mode enum
         uint8_t tx_allow : 1;       // 1 - tx allow; 0 - stop tx
@@ -72,6 +73,10 @@ typedef struct net_dev_s {
     void *priv;
 } net_dev_t;
 
+/*!
+ * @brief Check link status of network device
+ * @return True if Link is UP
+ */
 inline bool net_check_link(struct net_dev_s *net_dev) {
     return net_dev->flags.link_status;
 }
@@ -91,24 +96,32 @@ inline void net_dev_tx_disallow(struct net_dev_s *net_dev) {
 }
 
 /*!
- * @brief Test if tx disallowed
+ * @brief Check if transfer is allowed
+ * @return True if TX is allowed
  */
 inline bool net_dev_tx_allowed(struct net_dev_s *net_dev) {
     return net_dev->flags.tx_allow;
 }
 
 /*!
- *
+ * @brief Create Headre for network device
+ * @param net_buff Network Buffer
+ * @param net_dev Network Device
+ * @param type Type of packet
+ * @param d_addr Destination Hardwae Address
+ * @param s_addr Source Hardwae Address
+ * @param len Length of packet
+ * @return 0 if success
  */
 inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
                                 struct net_dev_s *net_dev,
                                 int16_t type,
-                                const void *mac_d, const void *mac_s,
+                                const void *d_addr, const void *s_addr,
                                 int16_t len) {
-    if (!net_dev->header_ops || net_dev->header_ops->create)
-        return 0;
+    if (!net_dev->header_ops || !net_dev->header_ops->create)
+        return -1;
     
-    return net_dev->header_ops->create(net_buff, type, mac_d, mac_s, len);
+    return net_dev->header_ops->create(net_buff, net_dev, type, d_addr, s_addr, len);
 }
 
 struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *));
@@ -118,6 +131,6 @@ void netdev_unregister(struct net_dev_s *net_dev);
 int8_t netdev_open(struct net_dev_s *net_dev);
 void netdev_close(struct net_dev_s *net_dev);
 void netdev_set_rx_mode(struct net_dev_s *net_dev);
-int8_t netdev_xmit(struct net_buff_s *net_buff);
+int8_t netdev_start_tx(struct net_buff_s *net_buff);
 
 #endif  /* !NET_DEV_H */

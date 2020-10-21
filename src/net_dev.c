@@ -118,11 +118,9 @@ void netdev_set_rx_mode(struct net_dev_s *net_dev) {
  * @param net_buff buffer to transmit
  * @return errno if error occured
  */
-int8_t netdev_xmit(struct net_buff_s *net_buff) {
+int8_t netdev_start_tx(struct net_buff_s *net_buff) {
     struct net_dev_s *net_dev = net_buff->net_dev;
-    int8_t ret;
-
-    net_buff->mac_hdr_offset = net_buff->data - net_buff->head;
+    int8_t ret = -1;    // ENETDOWN
 
     if (net_dev->flags.up_state) {
         if (net_dev_tx_allowed(net_dev)) {
@@ -131,10 +129,8 @@ int8_t netdev_xmit(struct net_buff_s *net_buff) {
             if (ret == NETDEV_TX_OK)
                 return ret;
         }
-    } else {
-        // ENETDOWN
-        ret = -1;
     }
+
     free_net_buff(net_buff);
     
     return ret;

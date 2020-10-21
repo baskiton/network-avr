@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "net/net.h"
 #include "net/net_dev.h"
@@ -16,13 +17,16 @@
 uint32_t my_ip = htonl(IN_ADDR_NONE);       // My IP Address
 uint32_t net_mask = htonl(IN_ADDR_NONE);    // Netmask for local subnet
 uint32_t gateway = htonl(IN_ADDR_NONE);     // Gateway IP Address
-uint32_t serv_addr = htonl(IN_ADDR_NONE);   // Boot server IP address
+uint32_t dns_serv = htonl(IN_ADDR_NONE);    // DNS server IP Address
 
+static uint32_t serv_addr = htonl(IN_ADDR_NONE);    // Boot server IP Address
 static uint32_t xid = 0;
 
 static const uint8_t dhcp_magic_cookie[4] PROGMEM = {99, 130, 83, 99};
-static volatile int8_t got_reply = 0;
+static volatile bool got_reply = false;
 static uint8_t dhcp_msg_type = 0;
+
+const uint8_t host_name[] PROGMEM = "bosduino";
 
 /* packet ops */
 #define BOOTP_REQUEST 1
@@ -70,7 +74,7 @@ struct dhcp_pkt_s {
     uint16_t flags;         // DHCP special parameters
     uint32_t ciaddr;        // client IP, if known
     uint32_t yiaddr;        // assigned IP
-    uint32_t siaddr;        // server IP
+    uint32_t siaddr;        // next server IP
     uint32_t giaddr;        // relay agent IP
     uint8_t chaddr[16];     // client HW addr
     uint8_t sname[64];      // server name (null-terminated string, optional)
@@ -108,7 +112,7 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff,
         goto out;
     
     // check checksum
-    if (in_checksum(iph, iph->ihl))
+    if (in_checksum(iph, iph->ihl * 4))
         goto out;
     
     data_len = pkt->udph.len - sizeof(struct udp_hdr_s);
@@ -131,7 +135,7 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff,
     if (opt_len >= 4 && !memcmp_P(pkt->options, dhcp_magic_cookie, 4)) {
         uint8_t *end = (void *)pkt + htons(pkt->iph.tot_len);
         uint8_t *opt_p = pkt->options + 4;
-        uint32_t srv_id = IN_ADDR_NONE;
+        uint32_t srv_id = htonl(IN_ADDR_NONE);
         uint8_t msg_type;
 
         // getting DHCP options from reply
@@ -161,24 +165,25 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff,
         }
 
         switch (msg_type) {
+            case DHCP_OFFER:
+                if (my_ip != htonl(IN_ADDR_NONE))
+                    goto out;
+                my_ip = pkt->yiaddr;
+                serv_addr = srv_id;
+                if ((serv_addr != htonl(IN_ADDR_NONE)) &&
+                    (serv_addr != pkt->siaddr))
+                    pkt->siaddr = serv_addr;
+                break;
+
             case DHCP_ACK:
-                if (!memcmp(net_dev->dev_addr, pkt->chaddr, ETH_MAC_LEN))
+                if (memcmp(net_dev->dev_addr, pkt->chaddr, ETH_MAC_LEN))
                     goto out;
                 // SUCCESS
                 break;
 
-            case DHCP_OFFER:
-                if (my_ip != IN_ADDR_NONE)
-                    goto out;
-                my_ip = pkt->yiaddr;
-                serv_addr = srv_id;
-                if ((serv_addr != IN_ADDR_NONE) && (serv_addr != pkt->siaddr))
-                    pkt->siaddr = serv_addr;
-                break;
-
             default:    // failed
-                my_ip = IN_ADDR_NONE;
-                serv_addr = IN_ADDR_NONE;
+                my_ip = htonl(IN_ADDR_NONE);
+                serv_addr = htonl(IN_ADDR_NONE);
                 goto out;
         }
         dhcp_msg_type = msg_type;
@@ -194,19 +199,17 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff,
             if (opt_p >= end)
                 break;
 
-            switch (*opt) {
+            switch (*opt++) {
                 case DHCP_OPT_SMASK:
-                    if (net_mask != IN_ADDR_NONE)
-                        memcpy(&net_mask, opt + 1, 4);
+                    memcpy(&net_mask, opt + 1, 4);
                     break;
                 
                 case DHCP_OPT_ROUTER:
-                    if (gateway != IN_ADDR_NONE)
-                        memcpy(&net_mask, opt + 1, 4);
+                    memcpy(&gateway, opt + 1, 4);
                     break;
                 
                 case DHCP_OPT_DNS:
-                    /* code */
+                    memcpy(&dns_serv, opt + 1, 4);
                     break;
                 
                 case DHCP_OPT_DNAME:
@@ -220,10 +223,11 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff,
     }
 
     my_ip = pkt->yiaddr;
-    serv_addr = pkt->siaddr;
-    if ((gateway == IN_ADDR_NONE) && (pkt->giaddr))
+    if (serv_addr == htonl(IN_ADDR_NONE))
+        serv_addr = pkt->siaddr;
+    if ((gateway == htonl(IN_ADDR_NONE)) && (pkt->giaddr))
         gateway = pkt->giaddr;
-    got_reply = 1;
+    got_reply = true;
 
 out:
     free_net_buff(net_buff);
@@ -236,7 +240,7 @@ out:
  */
 static void dhcp_options_init(uint8_t *options) {
     uint8_t *opt = options;
-    uint8_t msg_type = ((serv_addr == IN_ADDR_NONE) ?
+    uint8_t msg_type = ((serv_addr == htonl(IN_ADDR_NONE)) ?
                         DHCP_DISCOVER : DHCP_REQUEST);
     
     memcpy_P(opt, dhcp_magic_cookie, 4);    // RFC 1048 Magic Cookie
@@ -256,6 +260,14 @@ static void dhcp_options_init(uint8_t *options) {
         memcpy(opt, &my_ip, 4);
         opt += 4;
     }
+
+    if (host_name[0] != 0) {
+        *opt++ = DHCP_OPT_HNAME;
+        *opt++ = sizeof(host_name);
+        memcpy_P(opt, host_name, sizeof(host_name));
+        opt += sizeof(host_name);
+    }
+
     *opt++ = DHCP_OPT_PRLIST;
     *opt++ = 4;     // count of list elements
 
@@ -270,39 +282,48 @@ static void dhcp_options_init(uint8_t *options) {
 /*!
  * @brief Send DHCP request
  */
-static void dhcp_send_request() {
+static void dhcp_send_request(void) {
     struct net_buff_s *net_buff;
     struct dhcp_pkt_s *pkt;
-    struct ip_hdr_s *iph;
 
     net_buff = net_buff_alloc(sizeof(struct dhcp_pkt_s) + ETH_HDR_LEN);
     if (!net_buff) {
-        printf_P(PSTR("Error: IP config: dhcp_send_request: net_buff_alloc: not enough memory\n"));
+        printf_P(PSTR("\nError: IP config: dhcp_send_request: net_buff_alloc: not enough memory\n"));
         return;
     }
+
     net_buff->data += ETH_HDR_LEN;
     net_buff->tail += ETH_HDR_LEN;
+
     pkt = put_net_buff(net_buff, sizeof(struct dhcp_pkt_s));
     memset(pkt, 0, sizeof(struct dhcp_pkt_s));
 
     /* create IP header */
     net_buff->network_hdr_offset = net_buff->data - net_buff->head;
-    iph = (struct ip_hdr_s *)(net_buff->head + net_buff->network_hdr_offset);
-    iph->version = 4;
-    iph->ihl = 5;
-    iph->tot_len = htons(sizeof(struct dhcp_pkt_s));
-    iph->frag_off = htons(IP_DF);
-    iph->ttl = 64;
-    iph->protocol = IP_PROTO_UDP;
-    iph->ip_dst = htonl(IN_ADDR_BROADCAST);
-    iph->hdr_chks = in_checksum(iph, iph->ihl * 4);
+    
+    pkt->iph.version = 4;
+    pkt->iph.ihl = 5;
+    pkt->iph.tot_len = htons(sizeof(struct dhcp_pkt_s));
+    pkt->iph.frag_off = htons(IP_DF);
+    pkt->iph.ttl = 64;
+    pkt->iph.protocol = IP_PROTO_UDP;
+    pkt->iph.ip_dst = htonl(IN_ADDR_BROADCAST);
+    pkt->iph.hdr_chks = in_checksum(&pkt->iph, pkt->iph.ihl * 4);
     /** \c tos, \c id and \c ip_src is already zero */
 
+    net_buff->data += sizeof(struct ip_hdr_s);
+    net_buff->tail += sizeof(struct ip_hdr_s);
+
     /* create UDP header */
+    net_buff->transport_hdr_offset = net_buff->data - net_buff->head;
+
     pkt->udph.port_src = htons(68);
     pkt->udph.port_dst = htons(67);
     pkt->udph.len = htons(sizeof(struct dhcp_pkt_s) - sizeof(struct ip_hdr_s));
     // UDP checksum is not calculated - this is allowed in the BOOTP RFC
+
+    net_buff->data += sizeof(struct udp_hdr_s);
+    net_buff->tail += sizeof(struct udp_hdr_s);
 
     /* create DHCP header */
     pkt->op = BOOTP_REQUEST;
@@ -315,18 +336,18 @@ static void dhcp_send_request() {
     /* add DHCP options */
     dhcp_options_init(pkt->options);
 
+    /* create Ethernet Header */
     net_buff->net_dev = curr_net_dev;
     net_buff->protocol = htons(ETH_P_IP);
 
-    if (netdev_hdr_create(net_buff, curr_net_dev,
-        ntohs(net_buff->protocol),
-        curr_net_dev->broadcast, curr_net_dev->dev_addr,
-        net_buff->pkt_len)) {
+    if (netdev_hdr_create(net_buff, curr_net_dev, ntohs(net_buff->protocol),
+                          curr_net_dev->broadcast, curr_net_dev->dev_addr,
+                          net_buff->pkt_len)) {
         free_net_buff(net_buff);
         printf_P(PSTR("Error: IP config: device header create error\n"));
         return;
     }
-    if (netdev_xmit(net_buff)) {
+    if (netdev_start_tx(net_buff)) {
         printf_P(PSTR("Error: IP config: transfer failed\n"));
     }
 }
@@ -345,9 +366,12 @@ static int8_t dhcp(void) {
 
     /* 6 attempt with timeout ~4 sec */
     while (1) {
+        for (uint8_t i = 0; i < 2; i++)
+            ((uint16_t *)&xid)[i] = rand();
+
         dhcp_send_request();
 
-        t_out = F_CPU * 2;
+        t_out = F_CPU / 4;
         while (t_out && !got_reply)
             t_out--;
         
@@ -359,32 +383,22 @@ static int8_t dhcp(void) {
             /* if message type is not DHCP_ACK (eg. OFFER),
                 sending a new request according
                 to the received data */
-            got_reply = 0;
+            got_reply = false;
             continue;
         }
         if (!(--retries)) {
             printf_P(PSTR(" timed out!\n"));
             break;
         }
+        putchar('.');
     }
 
     /** TODO: clean packet handler */
 
     if (!got_reply) {
-        my_ip = IN_ADDR_NONE;
+        my_ip = htonl(IN_ADDR_NONE);
         return -1;
     }
-
-    uint8_t *ptr;
-    printf_P(PSTR("IP config: Success\n"));
-    ptr = (void *)&my_ip;
-    printf_P(PSTR("ip: %u.%u.%u.%u "), ptr[0], ptr[1], ptr[2], ptr[3]);
-    ptr = (void *)&net_mask;
-    printf_P(PSTR("Mask: %u.%u.%u.%u\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
-    ptr = (void *)&gateway;
-    printf_P(PSTR("Gateway: %u.%u.%u.%u "), ptr[0], ptr[1], ptr[2], ptr[3]);
-    ptr = (void *)&serv_addr;
-    printf_P(PSTR("Server Addr: %u.%u.%u.%u\n\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
 
     return 0;
 }
@@ -396,6 +410,7 @@ static int8_t dhcp(void) {
  */
 int8_t ip_auto_config(void) {
     int8_t err = 0;
+    uint8_t *ptr;
 
     if (!curr_net_dev) {
         // no device - error
@@ -411,14 +426,13 @@ int8_t ip_auto_config(void) {
         printf_P(PSTR("Error: IP Config: Failed to open\n"));
         return err;
     }
-    xid = random();
 
-    // loop until link status UP
-    while (!curr_net_dev->flags.link_status) {
+    // loop until link status is UP
+    while (!net_check_link(curr_net_dev)) {
         /** BUG: for some reason does not work without delay */
         _delay_ms(0);
     }
-    
+
     err = dhcp();
     if (err) {
         netdev_close(curr_net_dev);
@@ -426,6 +440,16 @@ int8_t ip_auto_config(void) {
         printf_P(PSTR("Error: IP config: Autoconfig of network failed\n"));
         return err;
     }
+
+    printf_P(PSTR("IP config: Success\n"));
+    ptr = (void *)&my_ip;
+    printf_P(PSTR("ip: %u.%u.%u.%u\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
+    ptr = (void *)&net_mask;
+    printf_P(PSTR("Mask: %u.%u.%u.%u\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
+    ptr = (void *)&gateway;
+    printf_P(PSTR("Gateway: %u.%u.%u.%u\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
+    ptr = (void *)&dns_serv;
+    printf_P(PSTR("DNS: %u.%u.%u.%u\n\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
 
     return err;
 }

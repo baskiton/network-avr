@@ -25,17 +25,16 @@ struct net_buff_s *net_buff_alloc(uint16_t size) {
     head = malloc(size);
     if (!head) {
         free(buff);
-        buff = NULL;
-        return buff;
+        return NULL;
     }
 
-    memset(buff, 0, ((size_t)&((struct net_buff_s *)0)->head));
+    memset(buff, 0, ((void *)&buff->head - (void *)buff));
     
     buff->head = buff->data = buff->tail = head;
     buff->end = buff->tail + size;
-    buff->mac_hdr_offset = (uint8_t)-1U;
-    buff->network_hdr_offset = (uint8_t)-1U;
-    buff->transport_hdr_offset = (uint8_t)-1U;
+    buff->mac_hdr_offset = buff->data - buff->head;
+    buff->network_hdr_offset = buff->mac_hdr_offset + ETH_HDR_LEN;
+    buff->transport_hdr_offset = 0;
 
     return buff;
 }

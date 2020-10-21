@@ -10,8 +10,8 @@
 #define IP_OFFSET 0x1FFF    // fragment offset part
 
 struct ip_hdr_s {
-    uint8_t version : 4;    // protocol version (for IPv4 it's 4)
     uint8_t ihl : 4;        // size of header - number of 32-bit words
+    uint8_t version : 4;    // protocol version (for IPv4 it's 4)
     uint8_t tos;            // 
     uint16_t tot_len;       // Size of packet
     uint16_t id;            // 

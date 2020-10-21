@@ -24,8 +24,8 @@ struct eth_frame_s {
     uint8_t *payload;
 };
 
-int8_t eth_header_create(struct net_buff_s *net_buff, int16_t type,
-                         const void *mac_d, const void *mac_s,
+int8_t eth_header_create(struct net_buff_s *net_buff, struct net_dev_s *net_dev,
+                         int16_t type, const void *mac_d, const void *mac_s,
                          int16_t len);
 void ether_setup(struct net_dev_s *net_dev);
 struct net_dev_s *eth_dev_alloc(uint8_t size);
