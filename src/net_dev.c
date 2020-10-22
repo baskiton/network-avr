@@ -70,6 +70,19 @@ void netdev_unregister(struct net_dev_s *net_dev) {
 /*!
  *
  */
+void netdev_set_rx_mode(struct net_dev_s *net_dev) {
+    const struct net_dev_ops_s *ops = net_dev->netdev_ops;
+
+    if (!net_dev->flags.up_state)
+        return;
+    
+    if (ops->set_rx_mode)
+        ops->set_rx_mode(net_dev);
+}
+
+/*!
+ *
+ */
 int8_t netdev_open(struct net_dev_s *net_dev) {
     int8_t err = 0;
 
@@ -101,19 +114,6 @@ void netdev_close(struct net_dev_s *net_dev) {
 }
 
 /*!
- *
- */
-void netdev_set_rx_mode(struct net_dev_s *net_dev) {
-    const struct net_dev_ops_s *ops = net_dev->netdev_ops;
-
-    if (!net_dev->flags.up_state)
-        return;
-    
-    if (ops->set_rx_mode)
-        ops->set_rx_mode(net_dev);
-}
-
-/*!
  * @brief Start transmit a buffer
  * @param net_buff buffer to transmit
  * @return errno if error occured
@@ -122,7 +122,7 @@ int8_t netdev_start_tx(struct net_buff_s *net_buff) {
     struct net_dev_s *net_dev = net_buff->net_dev;
     int8_t ret = -1;    // ENETDOWN
 
-    if (net_dev->flags.up_state) {
+    if (net_dev->flags.up_state && net_check_link(net_dev)) {
         if (net_dev_tx_allowed(net_dev)) {
             ret = net_dev->netdev_ops->start_tx(net_buff, net_dev);
 
