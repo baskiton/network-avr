@@ -232,6 +232,7 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff) {
 
 out:
     free_net_buff(net_buff);
+
     return 0;
 }
 

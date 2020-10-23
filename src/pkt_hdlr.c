@@ -15,23 +15,30 @@ static struct recv_pkt_hdlr_ops_s recv_ops = {
 void recv_pkt_handler(struct net_buff_s *net_buff) {
     switch (net_buff->protocol) {
         case htons(ETH_P_IP):
-            if (recv_ops.eth_ip)
+            if (recv_ops.eth_ip) {
                 recv_ops.eth_ip(net_buff);
+                return;
+            }
             break;
         
         case htons(ETH_P_ARP):
-            if (recv_ops.eth_arp)
+            if (recv_ops.eth_arp) {
                 recv_ops.eth_arp(net_buff);
+                return;
+            }
             break;
         
         case htons(ETH_P_IPV6):
-            if (recv_ops.eth_ipv6)
+            if (recv_ops.eth_ipv6) {
                 recv_ops.eth_ipv6(net_buff);
+                return;
+            }
             break;
         
         default:
             break;
     }
+    free_net_buff(net_buff);
 }
 
 /*!
@@ -41,15 +48,15 @@ void recv_pkt_handler(struct net_buff_s *net_buff) {
  */
 void pkt_hdlr_add(uint16_t type, proto_hdlr_t handler) {
     switch (type) {
-        case htons(ETH_P_IP):
+        case ETH_P_IP:
             recv_ops.eth_ip = handler;
             break;
         
-        case htons(ETH_P_ARP):
+        case ETH_P_ARP:
             recv_ops.eth_arp = handler;
             break;
         
-        case htons(ETH_P_IPV6):
+        case ETH_P_IPV6:
             recv_ops.eth_ipv6 = handler;
             break;
         
@@ -64,15 +71,15 @@ void pkt_hdlr_add(uint16_t type, proto_hdlr_t handler) {
  */
 void pkt_hdlr_del(uint16_t type) {
     switch (type) {
-        case htons(ETH_P_IP):
+        case ETH_P_IP:
             recv_ops.eth_ip = NULL;
             break;
         
-        case htons(ETH_P_ARP):
+        case ETH_P_ARP:
             recv_ops.eth_arp = NULL;
             break;
         
-        case htons(ETH_P_IPV6):
+        case ETH_P_IPV6:
             recv_ops.eth_ipv6 = NULL;
             break;
         
