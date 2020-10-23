@@ -73,7 +73,7 @@ void netdev_unregister(struct net_dev_s *net_dev) {
 void netdev_set_rx_mode(struct net_dev_s *net_dev) {
     const struct net_dev_ops_s *ops = net_dev->netdev_ops;
 
-    if (!net_dev->flags.up_state)
+    if (!net_dev_upstate_is_run(net_dev))
         return;
     
     if (ops->set_rx_mode)
@@ -86,14 +86,14 @@ void netdev_set_rx_mode(struct net_dev_s *net_dev) {
 int8_t netdev_open(struct net_dev_s *net_dev) {
     int8_t err = 0;
 
-    if (net_dev->flags.up_state)
+    if (net_dev_upstate_is_run(net_dev))
         return 0;
 
     if (net_dev->netdev_ops->open)
         err = net_dev->netdev_ops->open(net_dev);
 
     if (!err) {
-        net_dev->flags.up_state = 1;
+        net_dev_set_upstate_run(net_dev);
         netdev_set_rx_mode(net_dev);
     }
 
@@ -104,13 +104,13 @@ int8_t netdev_open(struct net_dev_s *net_dev) {
  *
  */
 void netdev_close(struct net_dev_s *net_dev) {
-    if (!net_dev->flags.up_state)
+    if (!net_dev_upstate_is_run(net_dev))
         return;
     
     if (net_dev->netdev_ops->stop)
         net_dev->netdev_ops->stop(net_dev);
 
-    net_dev->flags.up_state = 0;
+    net_dev_set_upstate_stop(net_dev);
 }
 
 /*!
@@ -122,8 +122,8 @@ int8_t netdev_start_tx(struct net_buff_s *net_buff) {
     struct net_dev_s *net_dev = net_buff->net_dev;
     int8_t ret = -1;    // ENETDOWN
 
-    if (net_dev->flags.up_state && net_check_link(net_dev)) {
-        if (net_dev_tx_allowed(net_dev)) {
+    if (net_dev_upstate_is_run(net_dev) && net_dev_link_is_up(net_dev)) {
+        if (net_dev_tx_is_allow(net_dev)) {
             ret = net_dev->netdev_ops->start_tx(net_buff, net_dev);
 
             if (ret == NETDEV_TX_OK)

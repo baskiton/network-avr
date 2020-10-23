@@ -428,7 +428,7 @@ int8_t ip_auto_config(void) {
     }
 
     // loop until link status is UP
-    while (!net_check_link(curr_net_dev)) {
+    while (!net_dev_link_is_up(curr_net_dev)) {
         /** BUG: for some reason does not work without delay */
         _delay_ms(0);
     }

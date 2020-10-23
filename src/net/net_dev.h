@@ -74,10 +74,46 @@ typedef struct net_dev_s {
 } net_dev_t;
 
 /*!
+ * @brief Set Up State flag of network device to Runing
+ */
+inline void net_dev_set_upstate_run(struct net_dev_s *net_dev) {
+    net_dev->flags.up_state = 1;
+}
+
+/*!
+ * @brief Set Up State flag of network device to Stopped
+ */
+inline void net_dev_set_upstate_stop(struct net_dev_s *net_dev) {
+    net_dev->flags.up_state = 0;
+}
+
+/*!
  * @brief Check link status of network device
  * @return True if Link is UP
  */
-inline bool net_check_link(struct net_dev_s *net_dev) {
+inline bool net_dev_upstate_is_run(struct net_dev_s *net_dev) {
+    return net_dev->flags.up_state;
+}
+
+/*!
+ * @brief Set Link Status flag of network device to UP
+ */
+inline void net_dev_set_link_up(struct net_dev_s *net_dev) {
+    net_dev->flags.link_status = 1;
+}
+
+/*!
+ * @brief Set Link Status flag of network device to DOWN
+ */
+inline void net_dev_set_link_down(struct net_dev_s *net_dev) {
+    net_dev->flags.link_status = 0;
+}
+
+/*!
+ * @brief Check link status of network device
+ * @return True if Link is UP
+ */
+inline bool net_dev_link_is_up(struct net_dev_s *net_dev) {
     return net_dev->flags.link_status;
 }
 
@@ -99,7 +135,7 @@ inline void net_dev_tx_disallow(struct net_dev_s *net_dev) {
  * @brief Check if transfer is allowed
  * @return True if TX is allowed
  */
-inline bool net_dev_tx_allowed(struct net_dev_s *net_dev) {
+inline bool net_dev_tx_is_allow(struct net_dev_s *net_dev) {
     return net_dev->flags.tx_allow;
 }
 
