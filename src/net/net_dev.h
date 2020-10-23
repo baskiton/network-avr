@@ -30,6 +30,7 @@ struct net_buff_s;
  * @param stop Function for change the state of net device to down
  * @param start_tx Function for transmit the packet
  * @param set_mac_addr Function for change the MAC address
+ * @param set_dev_settings Set device settings
  */
 struct net_dev_ops_s {
     int8_t (*init)(struct net_dev_s *net_dev);
@@ -38,6 +39,7 @@ struct net_dev_ops_s {
     int8_t (*start_tx)(struct net_buff_s *net_buff, struct net_dev_s *net_dev);
     void (*set_rx_mode)(struct net_dev_s *net_dev);
     int8_t (*set_mac_addr)(struct net_dev_s *net_dev, const void *addr);
+    int8_t (*set_dev_settings)(struct net_dev_s *net_dev, bool full_duplex);
     void (*irq_handler)(struct net_dev_s *net_dev);
 };
 
@@ -158,6 +160,20 @@ inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
         return -1;
     
     return net_dev->header_ops->create(net_buff, net_dev, type, d_addr, s_addr, len);
+}
+
+/*!
+ * @brief Set settings for network device
+ * @param net_dev Pointer to Network Device
+ * @param full_duplex Duplex mode; \a true - full duplex;
+ *                                 \a false - half duplex
+ * @return 0 if success
+ */
+int8_t netdev_set_settings(struct net_dev_s *net_dev, bool full_duplex) {
+    if (!net_dev->netdev_ops->set_dev_settings)
+        return -1;  // EOPNOTSUPP
+
+    return net_dev->netdev_ops->set_dev_settings(net_dev, full_duplex);
 }
 
 struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *));
