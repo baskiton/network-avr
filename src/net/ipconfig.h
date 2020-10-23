@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-#include "net.h"
-
 extern uint32_t my_ip;
 extern uint32_t net_mask;
 extern uint32_t gateway;

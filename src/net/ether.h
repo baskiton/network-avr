@@ -9,7 +9,9 @@
 #define ETH_MAC_LEN 6U
 #define ETH_HDR_LEN 14U
 
-#define ETH_P_IP        0x0800  // Internet Protocol packet
+#define ETH_P_IP        0x0800  // Internet Protocol
+#define ETH_P_ARP       0x0806  // Address Resolution Protocol
+#define ETH_P_IPV6      0x86DD  // Internet Protocol Version 6 (IPv6)
 #define ETH_P_802_3_MIN 0x0600
 #define ETH_P_802_2     0x0004  // 802.2 frame
 

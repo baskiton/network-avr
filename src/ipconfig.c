@@ -13,6 +13,7 @@
 #include "net/ip.h"
 #include "net/udp.h"
 #include "net/checksum.h"
+#include "net/pkt_handler.h"
 
 uint32_t my_ip = htonl(IN_ADDR_NONE);       // My IP Address
 uint32_t net_mask = htonl(IN_ADDR_NONE);    // Netmask for local subnet
@@ -86,11 +87,11 @@ struct dhcp_pkt_s {
  * @brief Receive DHCP reply
  * @return 0 if succes
  */
-static int8_t dhcp_recv(struct net_buff_s *net_buff,
-                        struct net_dev_s *net_dev) {
+static int8_t dhcp_recv(struct net_buff_s *net_buff) {
     struct dhcp_pkt_s *pkt;
     struct ip_hdr_s *iph;
     int16_t data_len, opt_len;
+    struct net_dev_s *net_dev = net_buff->net_dev;
 
     if (net_dev != curr_net_dev)
         goto out;
@@ -360,7 +361,7 @@ static int8_t dhcp(void) {
     int8_t retries = 6;
     int32_t t_out;
 
-    /** TODO: add packet handler for ETH_P_IP */
+    pkt_hdlr_add(ETH_P_IP, dhcp_recv);
 
     printf_P(PSTR("Sending DHCP request..."));
 
@@ -393,7 +394,7 @@ static int8_t dhcp(void) {
         putchar('.');
     }
 
-    /** TODO: clean packet handler */
+    pkt_hdlr_del(ETH_P_IP);
 
     if (!got_reply) {
         my_ip = htonl(IN_ADDR_NONE);

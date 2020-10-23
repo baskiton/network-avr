@@ -169,7 +169,7 @@ inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
  *                                 \a false - half duplex
  * @return 0 if success
  */
-int8_t netdev_set_settings(struct net_dev_s *net_dev, bool full_duplex) {
+inline int8_t netdev_set_settings(struct net_dev_s *net_dev, bool full_duplex) {
     if (!net_dev->netdev_ops->set_dev_settings)
         return -1;  // EOPNOTSUPP
 
