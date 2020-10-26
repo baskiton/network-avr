@@ -435,12 +435,24 @@ int8_t ip_auto_config(void) {
         _delay_ms(0);
     }
 
-    err = dhcp();
-    if (err) {
-        netdev_close(curr_net_dev);
-        curr_net_dev = NULL;
-        printf_P(PSTR("Error: IP config: Autoconfig of network failed\n"));
-        return err;
+    if (my_ip == htonl(IN_ADDR_NONE)) {
+        err = dhcp();
+        if (err) {
+            netdev_close(curr_net_dev);
+            curr_net_dev = NULL;
+            printf_P(PSTR("Error: IP config: Autoconfig of network failed\n"));
+            return err;
+        }
+    }
+
+    if (net_mask == htonl(IN_ADDR_NONE)) {
+        err = netmask_determine(&my_ip, &net_mask);
+        if ((err < 0) || (err >= IN_CLASS_D)) {
+            printf_P(PSTR("Error: IP config: This IP address is reserved and "
+                          "cannot be assigned to a network or host.\n"));
+            err = -1;
+            return err;
+        }
     }
 
     printf_P(PSTR("IP config: Success\n"));
@@ -454,4 +466,30 @@ int8_t ip_auto_config(void) {
     printf_P(PSTR("DNS: %u.%u.%u.%u\n\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
 
     return err;
+}
+
+/*!
+ * @brief Configuration the IP address (or autoconfig with DHCP)
+ *  for the currently network device.
+ * @param ip IP-address to set, string (might be \a NULL)
+ * @param nm Net Mask to set (might be \a NULL)
+ * @param gw Gateway address (might be \a NULL)
+ * @param dns DNS address (might be \a NULL)
+ * @return 0 if success
+ */
+int8_t ip_config(const char *ip, const char *nm,
+                 const char *gw, const char *dns) {
+    if (ip && (ip[0] != '\0'))
+        my_ip = ip_addr_parse(ip);
+
+    if (nm && (nm[0] != '\0'))
+        net_mask = ip_addr_parse(nm);
+
+    if (gw && (gw[0] != '\0'))
+        gateway = ip_addr_parse(gw);
+
+    if (dns && (dns[0] != '\0'))
+        dns_serv = ip_addr_parse(dns);
+
+    return ip_auto_config();
 }
