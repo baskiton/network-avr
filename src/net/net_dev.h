@@ -183,6 +183,7 @@ void netdev_unregister(struct net_dev_s *net_dev);
 int8_t netdev_open(struct net_dev_s *net_dev);
 void netdev_close(struct net_dev_s *net_dev);
 void netdev_set_rx_mode(struct net_dev_s *net_dev);
+int8_t netdev_set_mac_addr(struct net_dev_s *net_dev, const void *addr);
 int8_t netdev_start_tx(struct net_buff_s *net_buff);
 
 #endif  /* !NET_DEV_H */

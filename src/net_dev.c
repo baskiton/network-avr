@@ -135,3 +135,23 @@ int8_t netdev_start_tx(struct net_buff_s *net_buff) {
     
     return ret;
 }
+
+/*!
+ * @brief Set MAC address for network device
+ * @param net_dev Device
+ * @param addr Pointer to MAC
+ * @return 0 if success
+ */
+int8_t netdev_set_mac_addr(struct net_dev_s *net_dev, const void *addr) {
+    const struct net_dev_ops_s *ops = net_dev->netdev_ops;
+
+    if (!addr)
+        // EINVAL
+        return -1;
+
+    if (!ops->set_mac_addr)
+        // EOPNOTSUPP
+        return -1;
+
+    return ops->set_mac_addr(net_dev, addr);
+}
