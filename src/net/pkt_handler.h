@@ -16,7 +16,7 @@ struct recv_pkt_hdlr_ops_s {
     proto_hdlr_t eth_ipv6;  // IPv6 handler
 };
 
-void recv_pkt_handler(struct net_buff_s *net_buff);
+int8_t recv_pkt_handler(struct net_buff_s *net_buff);
 void pkt_hdlr_add(uint16_t type, proto_hdlr_t handler);
 void pkt_hdlr_del(uint16_t type);
 

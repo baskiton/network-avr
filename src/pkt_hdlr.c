@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include "net/net.h"
 #include "net/ether.h"
 #include "net/pkt_handler.h"
@@ -12,26 +14,23 @@ static struct recv_pkt_hdlr_ops_s recv_ops = {
  * @brief Received Packet Handler
  * @param net_buff Pointer to receive net buffer
  */
-void recv_pkt_handler(struct net_buff_s *net_buff) {
+int8_t recv_pkt_handler(struct net_buff_s *net_buff) {
     switch (net_buff->protocol) {
         case htons(ETH_P_IP):
             if (recv_ops.eth_ip) {
-                recv_ops.eth_ip(net_buff);
-                return;
+                return recv_ops.eth_ip(net_buff);
             }
             break;
         
         case htons(ETH_P_ARP):
             if (recv_ops.eth_arp) {
-                recv_ops.eth_arp(net_buff);
-                return;
+                return recv_ops.eth_arp(net_buff);
             }
             break;
         
         case htons(ETH_P_IPV6):
             if (recv_ops.eth_ipv6) {
-                recv_ops.eth_ipv6(net_buff);
-                return;
+                return recv_ops.eth_ipv6(net_buff);
             }
             break;
         
@@ -39,6 +38,8 @@ void recv_pkt_handler(struct net_buff_s *net_buff) {
             break;
     }
     free_net_buff(net_buff);
+
+    return -1;  // No Handler
 }
 
 /*!
