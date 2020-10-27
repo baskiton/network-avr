@@ -7,6 +7,7 @@
 
 #include "net/net.h"
 #include "net/ether.h"
+#include "net/arp.h"
 
 /*!
  * @brief Allocate a Network buffer
@@ -87,27 +88,31 @@ void free_net_buff(struct net_buff_s *net_buff) {
 /*!
  * @brief Determine the Network Class and set the subnet mask
  * @param ip pointer to IP-address in network byte order (big-endian)
- * @param netmask pointer to save subnet mask in network byte order (big-endian)
+ * @param netmask pointer to save subnet mask in network
+ *                byte order (big-endian) or NULL
  * @return Number of Network Class; -1 if error
  */
-int8_t netmask_determine(const void *ip, uint32_t *netmask) {
+int8_t net_class_determine(const void *ip, uint32_t *netmask) {
     int8_t ret = -1;
     uint8_t msb = *(uint8_t *)ip;
 
-    if (!ip || !netmask)
+    if (!ip)
         return ret;
 
     if ((msb & 0x80) == 0x00) {
         // Class A
-        *netmask = htonl(IN_CLASS_A_MASK);
+        if (netmask)
+            *netmask = htonl(IN_CLASS_A_MASK);
         ret = IN_CLASS_A;
     } else if ((msb & 0xC0) == 0x80) {
         // Class B
-        *netmask = htonl(IN_CLASS_B_MASK);
+        if (netmask)
+            *netmask = htonl(IN_CLASS_B_MASK);
         ret = IN_CLASS_B;
     } else if ((msb & 0xE0) == 0xC0) {
         // Class C
-        *netmask = htonl(IN_CLASS_C_MASK);
+        if (netmask)
+            *netmask = htonl(IN_CLASS_C_MASK);
         ret = IN_CLASS_C;
     } else if ((msb & 0xF0) == 0xE0) {
         ret = IN_CLASS_D;
@@ -147,4 +152,11 @@ uint32_t ip_addr_parse(const char *ip_str) {
     }
 
     return htonl(ip);
+}
+
+/*!
+ * @brief Initialize the handlers and others for IPv4
+ */
+void inet_init(void) {
+    arp_init();
 }

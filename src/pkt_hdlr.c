@@ -13,6 +13,7 @@ static struct recv_pkt_hdlr_ops_s recv_ops = {
 /*!
  * @brief Received Packet Handler
  * @param net_buff Pointer to receive net buffer
+ * @return 0 if success; 1 if drop
  */
 int8_t recv_pkt_handler(struct net_buff_s *net_buff) {
     switch (net_buff->protocol) {
@@ -39,7 +40,7 @@ int8_t recv_pkt_handler(struct net_buff_s *net_buff) {
     }
     free_net_buff(net_buff);
 
-    return -1;  // No Handler
+    return NETDEV_RX_DROP;  // No Handler, packet drop
 }
 
 /*!

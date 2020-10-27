@@ -233,7 +233,7 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff) {
 out:
     free_net_buff(net_buff);
 
-    return 0;
+    return NETDEV_RX_SUCCESS;
 }
 
 /*!
@@ -446,7 +446,7 @@ int8_t ip_auto_config(void) {
     }
 
     if (net_mask == htonl(IN_ADDR_NONE)) {
-        err = netmask_determine(&my_ip, &net_mask);
+        err = net_class_determine(&my_ip, &net_mask);
         if ((err < 0) || (err >= IN_CLASS_D)) {
             printf_P(PSTR("Error: IP config: This IP address is reserved and "
                           "cannot be assigned to a network or host.\n"));

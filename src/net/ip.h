@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define IP4_LEN 4
+#define IP6_LEN 6
+
 /* IP flags. */
 #define IP_CE 0x8000        // congestion (reserved, must be 0)
 #define IP_DF 0x4000        // don't fragment

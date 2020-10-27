@@ -12,6 +12,9 @@
 
 extern struct net_dev_s *curr_net_dev;
 
+#define NETDEV_RX_SUCCESS 0
+#define NETDEV_RX_DROP 1
+
 #define NETDEV_TX_OK 0
 #define NETDEV_TX_BUSY (uint8_t)~0U
 

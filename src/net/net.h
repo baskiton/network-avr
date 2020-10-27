@@ -30,19 +30,23 @@
 #define IN_CLASS_B_MASK 0xFFFF0000  // 255.255.0.0
 #define IN_CLASS_C 2
 #define IN_CLASS_C_MASK 0xFFFFFF00  // 255.255.255.0
-#define IN_CLASS_D 3
-#define IN_CLASS_E 4
+#define IN_CLASS_D 3    // used for multicast
+#define IN_CLASS_E 4    // reserved
 
 /* Packet types */
-#define PKT_HOST      0  // to us
-#define PKT_BROADCAST 1  // to all
-#define PKT_MULTICAST 2  // to group
-#define PKT_OTHERHOST 3  // to someone else
+#define PKT_HOST      0 // to us
+#define PKT_BROADCAST 1 // to all
+#define PKT_MULTICAST 2 // to group
+#define PKT_OTHERHOST 3 // to someone else
+#define PKT_LOOPBACK  4 // looped back
 
 /* Check CRC flag */
 #define CHECKSUM_NONE           0   // CRC have not yet been verified and this task must be performed by the system software.
 #define CHECKSUM_HW             1   // The device has already performed CRC calculation at the hardware level.
 #define CHECKSUM_UNNECESSARY    2   // Do not perform any CRC calculations.
+
+/* Hardware Types */
+#define HWT_ETHER 1
 
 #define htons(x) bswap_16(x)
 #define htonl(x) bswap_32(x)
@@ -111,8 +115,9 @@ struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size)
 void *put_net_buff(struct net_buff_s *net_buff, uint16_t len);
 void free_net_buff(struct net_buff_s *net_buff);
 
-int8_t netmask_determine(const void *ip, uint32_t *netmask);
-
+int8_t net_class_determine(const void *ip, uint32_t *netmask);
 uint32_t ip_addr_parse(const char *ip_str);
+
+void inet_init(void);
 
 #endif  /* !NET_H */

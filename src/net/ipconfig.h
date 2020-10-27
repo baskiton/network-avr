@@ -1,6 +1,8 @@
 #ifndef IPCONFIG_H
 #define IPCONFIG_H
 
+#include <avr/pgmspace.h>
+
 #include <stdint.h>
 
 extern uint32_t my_ip;
