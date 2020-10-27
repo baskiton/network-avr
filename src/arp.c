@@ -42,7 +42,7 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
         goto free_buf;
 
     /* just in case... */
-    if (memcmp(arph->spa, arph->tpa, IP4_LEN))
+    if (!memcmp(arph->spa, arph->tpa, IP4_LEN))
         goto free_buf;
 
     /* Send reply if it is a request for us */

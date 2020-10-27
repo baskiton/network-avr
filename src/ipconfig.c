@@ -429,13 +429,13 @@ int8_t ip_auto_config(void) {
         return err;
     }
 
-    // loop until link status is UP
-    while (!net_dev_link_is_up(curr_net_dev)) {
-        /** BUG: for some reason does not work without delay */
-        _delay_ms(0);
-    }
-
     if (my_ip == htonl(IN_ADDR_NONE)) {
+        // loop until link status is UP
+        while (!net_dev_link_is_up(curr_net_dev)) {
+            /** BUG: for some reason does not work without delay */
+            _delay_ms(0);
+        }
+
         err = dhcp();
         if (err) {
             netdev_close(curr_net_dev);
