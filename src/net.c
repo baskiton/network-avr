@@ -8,6 +8,10 @@
 #include "net/net.h"
 #include "net/ether.h"
 #include "net/arp.h"
+#include "net/ip.h"
+#include "net/tcp.h"
+#include "net/udp.h"
+#include "net/icmp.h"
 
 /*!
  * @brief Allocate a Network buffer
@@ -159,4 +163,8 @@ uint32_t ip_addr_parse(const char *ip_str) {
  */
 void inet_init(void) {
     arp_init();
+    ip_init();
+    tcp_init();
+    udp_init();
+    icmp_init();
 }

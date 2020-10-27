@@ -29,4 +29,6 @@ struct ip_hdr_s {
      * size: 0-10 * 32bits */
 };
 
+void ip_init(void);
+
 #endif  /* !IP_H */
