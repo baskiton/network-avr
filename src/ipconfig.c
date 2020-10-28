@@ -84,6 +84,14 @@ struct dhcp_pkt_s {
 };
 
 /*!
+ * @brief Generate xid
+ */
+static void xid_gen(void) {
+    for (uint8_t i = 0; i < 2; i++)
+        ((uint16_t *)&xid)[i] = rand();
+}
+
+/*!
  * @brief Receive DHCP reply
  * @return 0 if succes
  */
@@ -362,15 +370,13 @@ static int8_t dhcp(void) {
     int8_t retries = 6;
     int32_t t_out;
 
+    xid_gen();
     pkt_hdlr_add(ETH_P_IP, dhcp_recv);
 
     printf_P(PSTR("Sending DHCP request..."));
 
     /* 6 attempt with timeout ~4 sec */
     while (1) {
-        for (uint8_t i = 0; i < 2; i++)
-            ((uint16_t *)&xid)[i] = rand();
-
         dhcp_send_request();
 
         t_out = F_CPU / 4;
@@ -392,6 +398,7 @@ static int8_t dhcp(void) {
             printf_P(PSTR(" timed out!\n"));
             break;
         }
+        xid_gen();
         putchar('.');
     }
 
