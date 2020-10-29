@@ -4,6 +4,15 @@
 #include "net/ether.h"
 #include "net/pkt_handler.h"
 
+/*!
+ * @brief Handlers for specific protocols.
+ */
+struct recv_pkt_hdlr_ops_s {
+    proto_hdlr_t eth_ip;    // IPv4 handler
+    proto_hdlr_t eth_arp;   // ARP handler
+    proto_hdlr_t eth_ipv6;  // IPv6 handler
+};
+
 static struct recv_pkt_hdlr_ops_s recv_ops = {
     .eth_ip = NULL,
     .eth_arp = NULL,

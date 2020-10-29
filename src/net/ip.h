@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "net.h"
+
 #define IP4_LEN 4
 #define IP6_LEN 6
 
@@ -30,5 +32,9 @@ struct ip_hdr_s {
 };
 
 void ip_init(void);
+
+int8_t ip_proto_handler(uint8_t proto, struct net_buff_s *net_buff);
+void ip_proto_handler_add(uint8_t proto, proto_hdlr_t handler);
+void ip_proto_handler_del(uint8_t proto);
 
 #endif  /* !IP_H */

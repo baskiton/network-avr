@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "net.h"
+
 #define ICMP_ECHO_REPLY_T 0 // Echo Reply type
 #define ICMP_ECHO_REPLY_C 8 // Echo Reply code
 #define ICMP_ECHO_REQ_T 8   // Echo Request type
@@ -22,5 +24,7 @@ struct icmp_hdr_s {
 };
 
 void icmp_init(void);
+struct net_buff_s *icmp_create();
+void icmp_send();
 
 #endif  /* !ICMP_H */

@@ -164,7 +164,4 @@ uint32_t ip_addr_parse(const char *ip_str) {
 void inet_init(void) {
     arp_init();
     ip_init();
-    tcp_init();
-    udp_init();
-    icmp_init();
 }
