@@ -12,6 +12,9 @@
 
 extern struct net_dev_s *curr_net_dev;
 
+#define NETDEV_RX_SUCCESS 0
+#define NETDEV_RX_DROP 1
+
 #define NETDEV_TX_OK 0
 #define NETDEV_TX_BUSY (uint8_t)~0U
 
@@ -30,6 +33,7 @@ struct net_buff_s;
  * @param stop Function for change the state of net device to down
  * @param start_tx Function for transmit the packet
  * @param set_mac_addr Function for change the MAC address
+ * @param set_dev_settings Set device settings
  */
 struct net_dev_ops_s {
     int8_t (*init)(struct net_dev_s *net_dev);
@@ -38,6 +42,7 @@ struct net_dev_ops_s {
     int8_t (*start_tx)(struct net_buff_s *net_buff, struct net_dev_s *net_dev);
     void (*set_rx_mode)(struct net_dev_s *net_dev);
     int8_t (*set_mac_addr)(struct net_dev_s *net_dev, const void *addr);
+    int8_t (*set_dev_settings)(struct net_dev_s *net_dev, bool full_duplex);
     void (*irq_handler)(struct net_dev_s *net_dev);
 };
 
@@ -74,10 +79,46 @@ typedef struct net_dev_s {
 } net_dev_t;
 
 /*!
+ * @brief Set Up State flag of network device to Runing
+ */
+inline void net_dev_set_upstate_run(struct net_dev_s *net_dev) {
+    net_dev->flags.up_state = 1;
+}
+
+/*!
+ * @brief Set Up State flag of network device to Stopped
+ */
+inline void net_dev_set_upstate_stop(struct net_dev_s *net_dev) {
+    net_dev->flags.up_state = 0;
+}
+
+/*!
  * @brief Check link status of network device
  * @return True if Link is UP
  */
-inline bool net_check_link(struct net_dev_s *net_dev) {
+inline bool net_dev_upstate_is_run(struct net_dev_s *net_dev) {
+    return net_dev->flags.up_state;
+}
+
+/*!
+ * @brief Set Link Status flag of network device to UP
+ */
+inline void net_dev_set_link_up(struct net_dev_s *net_dev) {
+    net_dev->flags.link_status = 1;
+}
+
+/*!
+ * @brief Set Link Status flag of network device to DOWN
+ */
+inline void net_dev_set_link_down(struct net_dev_s *net_dev) {
+    net_dev->flags.link_status = 0;
+}
+
+/*!
+ * @brief Check link status of network device
+ * @return True if Link is UP
+ */
+inline bool net_dev_link_is_up(struct net_dev_s *net_dev) {
     return net_dev->flags.link_status;
 }
 
@@ -99,7 +140,7 @@ inline void net_dev_tx_disallow(struct net_dev_s *net_dev) {
  * @brief Check if transfer is allowed
  * @return True if TX is allowed
  */
-inline bool net_dev_tx_allowed(struct net_dev_s *net_dev) {
+inline bool net_dev_tx_is_allow(struct net_dev_s *net_dev) {
     return net_dev->flags.tx_allow;
 }
 
@@ -124,6 +165,20 @@ inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
     return net_dev->header_ops->create(net_buff, net_dev, type, d_addr, s_addr, len);
 }
 
+/*!
+ * @brief Set settings for network device
+ * @param net_dev Pointer to Network Device
+ * @param full_duplex Duplex mode; \a true - full duplex;
+ *                                 \a false - half duplex
+ * @return 0 if success
+ */
+inline int8_t netdev_set_settings(struct net_dev_s *net_dev, bool full_duplex) {
+    if (!net_dev->netdev_ops->set_dev_settings)
+        return -1;  // EOPNOTSUPP
+
+    return net_dev->netdev_ops->set_dev_settings(net_dev, full_duplex);
+}
+
 struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *));
 void net_dev_free(struct net_dev_s *net_dev);
 int8_t netdev_register(struct net_dev_s *net_dev);
@@ -131,6 +186,7 @@ void netdev_unregister(struct net_dev_s *net_dev);
 int8_t netdev_open(struct net_dev_s *net_dev);
 void netdev_close(struct net_dev_s *net_dev);
 void netdev_set_rx_mode(struct net_dev_s *net_dev);
+int8_t netdev_set_mac_addr(struct net_dev_s *net_dev, const void *addr);
 int8_t netdev_start_tx(struct net_buff_s *net_buff);
 
 #endif  /* !NET_DEV_H */

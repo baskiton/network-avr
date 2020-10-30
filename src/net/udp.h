@@ -10,4 +10,6 @@ struct udp_hdr_s {
     uint16_t chks;      // Checksum
 };
 
+void udp_init(void);
+
 #endif  /* !UDP_H */

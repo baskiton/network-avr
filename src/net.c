@@ -7,6 +7,11 @@
 
 #include "net/net.h"
 #include "net/ether.h"
+#include "net/arp.h"
+#include "net/ip.h"
+#include "net/tcp.h"
+#include "net/udp.h"
+#include "net/icmp.h"
 
 /*!
  * @brief Allocate a Network buffer
@@ -82,4 +87,81 @@ void *put_net_buff(struct net_buff_s *net_buff, uint16_t len) {
 void free_net_buff(struct net_buff_s *net_buff) {
     free(net_buff->head);
     free(net_buff);
+}
+
+/*!
+ * @brief Determine the Network Class and set the subnet mask
+ * @param ip pointer to IP-address in network byte order (big-endian)
+ * @param netmask pointer to save subnet mask in network
+ *                byte order (big-endian) or NULL
+ * @return Number of Network Class; -1 if error
+ */
+int8_t net_class_determine(const void *ip, uint32_t *netmask) {
+    int8_t ret = -1;
+    uint8_t msb = *(uint8_t *)ip;
+
+    if (!ip)
+        return ret;
+
+    if ((msb & 0x80) == 0x00) {
+        // Class A
+        if (netmask)
+            *netmask = htonl(IN_CLASS_A_MASK);
+        ret = IN_CLASS_A;
+    } else if ((msb & 0xC0) == 0x80) {
+        // Class B
+        if (netmask)
+            *netmask = htonl(IN_CLASS_B_MASK);
+        ret = IN_CLASS_B;
+    } else if ((msb & 0xE0) == 0xC0) {
+        // Class C
+        if (netmask)
+            *netmask = htonl(IN_CLASS_C_MASK);
+        ret = IN_CLASS_C;
+    } else if ((msb & 0xF0) == 0xE0) {
+        ret = IN_CLASS_D;
+        // Class D
+        // Net mask is not defined
+    } else if ((msb & 0xF0) == 0xF0) {
+        ret = IN_CLASS_E;
+        // Class E
+        // Net mask is not defined
+    }
+
+    return ret;
+}
+
+/*!
+ * @brief Convert IP addr from ASCII-string to binary
+ * @param ip_str ASCII-string with IP-addr
+ * @return Binary IP in Network byte order (big-endian)
+ */
+uint32_t ip_addr_parse(const char *ip_str) {
+    uint32_t ip = 0;
+    char tmp_str[4] = {0, 0, 0, 0};
+    int8_t y;
+
+    for (int8_t i = 0; i < 4; i++) {
+        ip <<= 8;
+        y = 0;
+        memset(tmp_str, 0, 4);
+        while ((*ip_str != 0) && (*ip_str != '.') && (y < 3)) {
+            tmp_str[y] = *ip_str;
+            ip_str++;
+            y++;
+        }
+        ip |= atol(tmp_str);
+        if (*ip_str != 0)
+            ip_str++;
+    }
+
+    return htonl(ip);
+}
+
+/*!
+ * @brief Initialize the handlers and others for IPv4
+ */
+void inet_init(void) {
+    arp_init();
+    ip_init();
 }

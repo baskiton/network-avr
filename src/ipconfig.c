@@ -13,6 +13,7 @@
 #include "net/ip.h"
 #include "net/udp.h"
 #include "net/checksum.h"
+#include "net/pkt_handler.h"
 
 uint32_t my_ip = htonl(IN_ADDR_NONE);       // My IP Address
 uint32_t net_mask = htonl(IN_ADDR_NONE);    // Netmask for local subnet
@@ -83,14 +84,22 @@ struct dhcp_pkt_s {
 };
 
 /*!
+ * @brief Generate xid
+ */
+static void xid_gen(void) {
+    for (uint8_t i = 0; i < 2; i++)
+        ((uint16_t *)&xid)[i] = rand();
+}
+
+/*!
  * @brief Receive DHCP reply
  * @return 0 if succes
  */
-static int8_t dhcp_recv(struct net_buff_s *net_buff,
-                        struct net_dev_s *net_dev) {
+static int8_t dhcp_recv(struct net_buff_s *net_buff) {
     struct dhcp_pkt_s *pkt;
     struct ip_hdr_s *iph;
     int16_t data_len, opt_len;
+    struct net_dev_s *net_dev = net_buff->net_dev;
 
     if (net_dev != curr_net_dev)
         goto out;
@@ -231,7 +240,8 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff,
 
 out:
     free_net_buff(net_buff);
-    return 0;
+
+    return NETDEV_RX_SUCCESS;
 }
 
 /*!
@@ -360,15 +370,13 @@ static int8_t dhcp(void) {
     int8_t retries = 6;
     int32_t t_out;
 
-    /** TODO: add packet handler for ETH_P_IP */
+    xid_gen();
+    pkt_hdlr_add(ETH_P_IP, dhcp_recv);
 
     printf_P(PSTR("Sending DHCP request..."));
 
     /* 6 attempt with timeout ~4 sec */
     while (1) {
-        for (uint8_t i = 0; i < 2; i++)
-            ((uint16_t *)&xid)[i] = rand();
-
         dhcp_send_request();
 
         t_out = F_CPU / 4;
@@ -390,10 +398,11 @@ static int8_t dhcp(void) {
             printf_P(PSTR(" timed out!\n"));
             break;
         }
+        xid_gen();
         putchar('.');
     }
 
-    /** TODO: clean packet handler */
+    pkt_hdlr_del(ETH_P_IP);
 
     if (!got_reply) {
         my_ip = htonl(IN_ADDR_NONE);
@@ -427,18 +436,30 @@ int8_t ip_auto_config(void) {
         return err;
     }
 
-    // loop until link status is UP
-    while (!net_check_link(curr_net_dev)) {
-        /** BUG: for some reason does not work without delay */
-        _delay_ms(0);
+    if (my_ip == htonl(IN_ADDR_NONE)) {
+        // loop until link status is UP
+        while (!net_dev_link_is_up(curr_net_dev)) {
+            /** BUG: for some reason does not work without delay */
+            _delay_ms(0);
+        }
+
+        err = dhcp();
+        if (err) {
+            netdev_close(curr_net_dev);
+            curr_net_dev = NULL;
+            printf_P(PSTR("Error: IP config: Autoconfig of network failed\n"));
+            return err;
+        }
     }
 
-    err = dhcp();
-    if (err) {
-        netdev_close(curr_net_dev);
-        curr_net_dev = NULL;
-        printf_P(PSTR("Error: IP config: Autoconfig of network failed\n"));
-        return err;
+    if (net_mask == htonl(IN_ADDR_NONE)) {
+        err = net_class_determine(&my_ip, &net_mask);
+        if ((err < 0) || (err >= IN_CLASS_D)) {
+            printf_P(PSTR("Error: IP config: This IP address is reserved and "
+                          "cannot be assigned to a network or host.\n"));
+            err = -1;
+            return err;
+        }
     }
 
     printf_P(PSTR("IP config: Success\n"));
@@ -452,4 +473,30 @@ int8_t ip_auto_config(void) {
     printf_P(PSTR("DNS: %u.%u.%u.%u\n\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
 
     return err;
+}
+
+/*!
+ * @brief Configuration the IP address (or autoconfig with DHCP)
+ *  for the currently network device.
+ * @param ip IP-address to set, string (might be \a NULL)
+ * @param nm Net Mask to set (might be \a NULL)
+ * @param gw Gateway address (might be \a NULL)
+ * @param dns DNS address (might be \a NULL)
+ * @return 0 if success
+ */
+int8_t ip_config(const char *ip, const char *nm,
+                 const char *gw, const char *dns) {
+    if (ip && (ip[0] != '\0'))
+        my_ip = ip_addr_parse(ip);
+
+    if (nm && (nm[0] != '\0'))
+        net_mask = ip_addr_parse(nm);
+
+    if (gw && (gw[0] != '\0'))
+        gateway = ip_addr_parse(gw);
+
+    if (dns && (dns[0] != '\0'))
+        dns_serv = ip_addr_parse(dns);
+
+    return ip_auto_config();
 }
