@@ -1,6 +1,6 @@
 {
     "name": "Network",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Network for AVR.",
     "keywords": "avr, baskiton, ethernet, enc28j60, 28j60",
     "repository":
