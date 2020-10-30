@@ -46,7 +46,9 @@ static int8_t icmp_echo(struct net_buff_s *nb) {
     struct eth_header_s *eth_hdr = (void *)(nb->head + nb->mac_hdr_offset);
     struct ip_hdr_s *iph = get_ip_hdr(nb);
     struct icmp_hdr_s *icmp_h = get_icmp_hdr(nb);
+
     /** FIXME: used old net buffer to reply */
+    nb->pkt_len -= 4;
 
     memcpy(eth_hdr->mac_dest, eth_hdr->mac_src, ETH_MAC_LEN);
     memcpy(eth_hdr->mac_src, ndev->dev_addr, ETH_MAC_LEN);
@@ -59,7 +61,7 @@ static int8_t icmp_echo(struct net_buff_s *nb) {
 
     icmp_h->type = ICMP_ECHO_REPLY;
     icmp_h->chks = 0;
-    icmp_h->chks = in_checksum(icmp_h, (iph->tot_len - iph->ihl * 4));
+    icmp_h->chks = in_checksum(icmp_h, (ntohs(iph->tot_len) - iph->ihl * 4));
 
     return netdev_start_tx(nb);
 }
@@ -81,7 +83,7 @@ int8_t icmp_recv(struct net_buff_s *nb) {
         goto drop;
 
     /* drop if invalid checksum */
-    if (in_checksum(icmp_h, (iph->tot_len - iph->ihl * 4)))
+    if (in_checksum(icmp_h, (ntohs(iph->tot_len) - iph->ihl * 4)))
         goto drop;
 
     /* handlers of the specified ICMP types */

@@ -81,6 +81,7 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
     if (arph->oper == htons(ARP_OP_REQ)) {
         /* so far, the same net buffer is used that we received,
             just overwrite the required fields. */
+        net_buff->pkt_len -= 4;
         ndev = net_buff->net_dev;
         eth_hdr = (void *)(net_buff->head + net_buff->mac_hdr_offset);
 
