@@ -13,7 +13,7 @@
  * @param net_buff Pointer to network buffer
  * @return Pointer to IP header
  */
-static struct ip_hdr_s *get_ip_hdr(struct net_buff_s *net_buff) {
+struct ip_hdr_s *get_ip_hdr(struct net_buff_s *net_buff) {
     return (void *)(net_buff->head + net_buff->network_hdr_offset);
 }
 
