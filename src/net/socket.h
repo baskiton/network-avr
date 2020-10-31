@@ -16,6 +16,18 @@
 /* Protocol Families. Same as Address Families */
 #define PF_INET AF_INET
 
+/* Socket States */
+#define SS_FREE 0           // not allocated
+#define SS_UNCONNECTED 1    // unconnected to any socket
+#define SS_CONNECTING 2     // in process of connecting
+#define SS_CONNECTED 3      // connected to socket
+#define SS_DISCONNECTING 4  // in process of disconnecting
+
+/* Socket Types */
+#define ST_STREAM 1     // stream (connection) socket
+#define ST_DGRAM 2      // datagram (conn.less) socket
+#define ST_RAW 3        // raw socket
+
 struct sock_addr {
     uint8_t family; // address family
     uint16_t port;  // port number
@@ -23,8 +35,8 @@ struct sock_addr {
 };
 
 struct soket {
-    uint8_t state;
-    uint8_t type;
+    uint8_t state : 4;  // Socket State
+    uint8_t type : 4;   // Socket Type
     struct protocol_ops *p_ops;
     FILE *file;
 };
