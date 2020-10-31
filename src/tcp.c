@@ -1,4 +1,5 @@
 #include "net/net.h"
+#include "net/ip.h"
 
 /*!
  * @brief Initialize TCP handler
