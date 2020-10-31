@@ -10,13 +10,11 @@
 struct recv_pkt_hdlr_ops_s {
     proto_hdlr_t eth_ip;    // IPv4 handler
     proto_hdlr_t eth_arp;   // ARP handler
-    proto_hdlr_t eth_ipv6;  // IPv6 handler
 };
 
 static struct recv_pkt_hdlr_ops_s recv_ops = {
     .eth_ip = NULL,
     .eth_arp = NULL,
-    .eth_ipv6 = NULL
 };
 
 /*!
@@ -35,12 +33,6 @@ int8_t recv_pkt_handler(struct net_buff_s *net_buff) {
         case htons(ETH_P_ARP):
             if (recv_ops.eth_arp) {
                 return recv_ops.eth_arp(net_buff);
-            }
-            break;
-        
-        case htons(ETH_P_IPV6):
-            if (recv_ops.eth_ipv6) {
-                return recv_ops.eth_ipv6(net_buff);
             }
             break;
         
@@ -67,10 +59,6 @@ void pkt_hdlr_add(uint16_t type, proto_hdlr_t handler) {
             recv_ops.eth_arp = handler;
             break;
         
-        case ETH_P_IPV6:
-            recv_ops.eth_ipv6 = handler;
-            break;
-        
         default:
             break;
     }
@@ -88,10 +76,6 @@ void pkt_hdlr_del(uint16_t type) {
         
         case ETH_P_ARP:
             recv_ops.eth_arp = NULL;
-            break;
-        
-        case ETH_P_IPV6:
-            recv_ops.eth_ipv6 = NULL;
             break;
         
         default:
