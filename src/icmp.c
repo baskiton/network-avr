@@ -32,20 +32,24 @@ static inline bool icmp_is_query(uint8_t type) {
         case ICMP_INFO_REPLY:
         case ICMP_ADDRESS_REQ:
         case ICMP_ADDRESS_REPLY:
-        */
+        // */
             return true;
     }
     return false;
 }
 
 /*!
- *
+ * @brief Reply to Echo Request (ping)
  */
 static int8_t icmp_echo(struct net_buff_s *nb) {
     struct net_dev_s *ndev = nb->net_dev;
     struct eth_header_s *eth_hdr = (void *)(nb->head + nb->mac_hdr_offset);
     struct ip_hdr_s *iph = get_ip_hdr(nb);
     struct icmp_hdr_s *icmp_h = get_icmp_hdr(nb);
+
+    /* drop if IP not ours */
+    if (iph->ip_dst != my_ip)
+        return NETDEV_RX_DROP;
 
     /** FIXME: used old net buffer to reply */
     nb->pkt_len -= 4;
@@ -111,59 +115,29 @@ void icmp_init(void) {
 }
 
 /*!
- *
- */
-struct net_buff_s *icmp_create() {
-
-    return NULL;
-}
-
-/*!
- * @brief Send an ICMP message
- * @param nb Network Buffer
- * @param type Type of message
+ * @brief Create ICMP header
+ * @param net_dev Network device
+ * @param type Type of ICMP
  * @param code Subtype
+ * @param hdr_data Rest of Header
+ * @param data Pointer to additional data
+ * @param data_len Size of \p data
+ * @return 0 if success
  */
-void icmp_send(struct net_buff_s *nb, uint8_t type, uint8_t code) {
-    struct ip_hdr_s *iph;
-    struct icmp_hdr_s *icmp_h;
+int8_t icmp_hdr_create(struct net_buff_s *nb,
+                       uint8_t type, uint8_t code,
+                       uint32_t hdr_data, const void *data,
+                       uint16_t data_len) {
+    struct icmp_hdr_s *icmp_h = get_icmp_hdr(nb);
 
-    iph = get_ip_hdr(nb);
+    icmp_h->type = type;
+    icmp_h->code = code;
+    icmp_h->hdr_data.data = htonl(hdr_data);
+    memcpy(icmp_h + (sizeof(struct icmp_hdr_s)), data, data_len);
+    icmp_h->chks = 0;
+    icmp_h->chks = in_checksum(icmp_h, sizeof(struct icmp_hdr_s) + data_len);
+    if (in_checksum(icmp_h, sizeof(struct icmp_hdr_s) + data_len))
+        return -1;
 
-    /* The following rules are described in RFC1122: 3.2.2 */
-    /* Don't reply to multicast/broadcast MAC */
-    if (nb->flags.pkt_type != PKT_HOST)
-        return;
-
-    /* Don't reply to multicast/broadcast IP */
-    if (ip4_is_multicast(&iph->ip_dst) || ip4_is_broadcast(&iph->ip_dst))
-        return;
-
-    /* Only reply to fragment 0 */
-    if (iph->frag_off & htons(IP_OFFSET))
-        return;
-
-    /* Don't reply if source IP is not define a single host */
-    if (ip4_is_zero(&iph->ip_src) ||
-        ip4_is_loopback(&iph->ip_src) ||
-        ip4_is_broadcast(&iph->ip_src) ||
-        ip4_is_multicast(&iph->ip_src) ||
-        (net_class_determine(&iph->ip_src, NULL) == IN_CLASS_E))
-        return;
-
-    icmp_h = get_icmp_hdr(nb);
-
-    /* Check if we send ICMP error message */
-    if (!icmp_is_query(type)) {
-        /* Don't reply to error and any unknown/not supported ICMP type */
-        if (!icmp_is_query(icmp_h->type))
-            return;
-    }
-
-    /* RFC1812: 4.3.2.5 TOS and Precedence */
-    if (icmp_is_query(type)) {}
-        // tos = iph->tos;
-    else {}
-        // tos = (iph->tos & IP_TOS_MASK) | IP_TOS_PREC_INET_CTRL;
-    // saddr = iph->ip_dst
+    return 0;
 }

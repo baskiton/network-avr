@@ -184,9 +184,7 @@ struct net_buff_s *arp_create(struct net_dev_s *net_dev,
         spa = (void *)&my_ip;
 
     net_buff->protocol = htons(ETH_P_ARP);
-    net_buff->data += ETH_HDR_LEN;
     net_buff->tail += ETH_HDR_LEN;
-    net_buff->network_hdr_offset = net_buff->data - net_buff->head;
     if (netdev_hdr_create(net_buff, net_dev, ETH_P_ARP,
                           dest_hw, sha, net_buff->pkt_len))
         goto out;

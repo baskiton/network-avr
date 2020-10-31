@@ -18,27 +18,6 @@ struct ip_hdr_s *get_ip_hdr(struct net_buff_s *net_buff) {
 }
 
 /*!
- * @brief Process an IP packet
- * @param nb Pointer to network buffer
- * @return 0 if success
- */
-static int8_t ip_proc(struct net_buff_s *nb) {
-    int8_t ret = NETDEV_RX_DROP;
-    struct ip_hdr_s *iph = get_ip_hdr(nb);
-
-    /** FIXME: at this time IP options is not support */
-    if (iph->ihl > 5)
-        goto out;
-
-    return ip_proto_handler(iph->protocol, nb);
-
-out:
-    free_net_buff(nb);
-
-    return ret;
-}
-
-/*!
  * @brief IP receive main handler
  * @param nb Network buffer
  * @return 0 if success
@@ -69,8 +48,13 @@ static int8_t ip_recv(struct net_buff_s *nb) {
     /* set transport header offset */
     nb->transport_hdr_offset = nb->network_hdr_offset + iph->ihl * 4;
 
-    /* and process... */
-    return ip_proc(nb);
+    /** and process...
+     *  FIXME: at this time IP options is not support
+     */
+    if (iph->ihl > 5)
+        goto out;
+
+    return ip_proto_handler(iph->protocol, nb);
 
 out:
     free_net_buff(nb);

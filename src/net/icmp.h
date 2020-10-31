@@ -33,7 +33,9 @@ struct icmp_hdr_s {
 };
 
 void icmp_init(void);
-struct net_buff_s *icmp_create();
-void icmp_send(struct net_buff_s *nb, uint8_t type, uint8_t code);
+int8_t icmp_hdr_create(struct net_buff_s *nb,
+                       uint8_t type, uint8_t code,
+                       uint32_t hdr_data, const void *data,
+                       uint16_t data_len);
 
 #endif  /* !ICMP_H */
