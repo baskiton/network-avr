@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#include "net.h"
-#include "net_dev.h"
+#include "net/net.h"
+#include "net/net_dev.h"
 
 #define ETH_MAC_LEN 6U
 #define ETH_HDR_LEN 14U

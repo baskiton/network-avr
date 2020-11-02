@@ -5,17 +5,16 @@
 
 #include <defines.h>
 
-#include "ether.h"
-#include "net_dev.h"
-#include "socket.h"
+#include "net/ether.h"
+#include "net/net_dev.h"
+#include "net/socket.h"
 
 #define IP_PROTO_IP         0   // Dummy protocol for TCP
 #define IP_PROTO_ICMP       1   // Internet Control Message Protocol
 #define IP_PROTO_TCP        6   // Transmission Control Protocol
 #define IP_PROTO_UDP        17  // User Datagram Protocol
 #define IP_PROTO_IPV6       41  // IPv6-in-IPv4 tunnelling
-#define IP_PROTO_UDPLITE    136 // UDP-Lite (RFC 3828)
-#define IP_PROTO_ETHERNET   143 // Ethernet-within-IPv6 Encapsulation
+#define IP_PROTO_RAW        255 // Raw IP packet
 
 #define ETH_HDR_ALIGN 2
 
@@ -48,22 +47,15 @@
 /* Hardware Types */
 #define HWT_ETHER 1
 
-#define htons(x) bswap_16(x)
-#define htonl(x) bswap_32(x)
-#define htonll(x) bswap_64(x)
-#define ntohs(x) bswap_16(x)
-#define ntohl(x) bswap_32(x)
-#define ntohll(x) bswap_64(x)
-
-struct soket;
-struct sock_addr;
+struct socket;
+struct sockaddr;
 
 /**
  * @brief
  * @param bind
  */
 struct protocol_ops {
-    int8_t (*bind)(struct soket *sk, const struct sock_addr *addr);
+    int8_t (*bind)(struct socket *sk, const struct sockaddr *addr);
 };
 
 /**
@@ -121,5 +113,6 @@ int8_t net_class_determine(const void *ip, uint32_t *netmask);
 uint32_t ip_addr_parse(const char *ip_str);
 
 void inet_init(void);
+int8_t inet_sock_create(struct socket *sk, uint8_t protocol);
 
 #endif  /* !NET_H */

@@ -3,11 +3,11 @@
 
 #include "net/net.h"
 #include "net/net_dev.h"
-#include "net/ip.h"
-#include "net/icmp.h"
 #include "net/checksum.h"
 #include "net/ipconfig.h"
 #include "net/ether.h"
+#include "netinet/ip.h"
+#include "netinet/icmp.h"
 
 /*!
  * @brief Get the ICMP header

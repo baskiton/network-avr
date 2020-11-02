@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #include "net/net.h"
-#include "net/ip.h"
+#include "netinet/ip.h"
 
 /*!
  * @brief Handlers for specific protocols.

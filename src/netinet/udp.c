@@ -1,5 +1,5 @@
 #include "net/net.h"
-#include "net/ip.h"
+#include "netinet/ip.h"
 
 /*!
  * @brief Initialize UDP handler

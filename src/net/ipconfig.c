@@ -10,10 +10,10 @@
 #include "net/net.h"
 #include "net/net_dev.h"
 #include "net/ipconfig.h"
-#include "net/ip.h"
-#include "net/udp.h"
 #include "net/checksum.h"
 #include "net/pkt_handler.h"
+#include "netinet/ip.h"
+#include "netinet/udp.h"
 
 uint32_t my_ip = htonl(IN_ADDR_NONE);       // My IP Address
 uint32_t net_mask = htonl(IN_ADDR_NONE);    // Netmask for local subnet

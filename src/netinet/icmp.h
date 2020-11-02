@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "net.h"
+#include "net/net.h"
 
 #define ICMP_ECHO_REPLY 0       // Echo Reply type
 #define ICMP_DEST_UNREACH 3     // Destination Unreachable

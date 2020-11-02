@@ -7,8 +7,8 @@
 
 #include <defines.h>
 
-#include "ether.h"
-#include "net.h"
+#include "net/ether.h"
+#include "net/net.h"
 
 extern struct net_dev_s *curr_net_dev;
 

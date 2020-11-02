@@ -1,12 +1,12 @@
 #include <stdint.h>
 
 #include "net/net.h"
-#include "net/ip.h"
-#include "net/icmp.h"
-#include "net/tcp.h"
-#include "net/udp.h"
 #include "net/pkt_handler.h"
 #include "net/checksum.h"
+#include "netinet/ip.h"
+#include "netinet/icmp.h"
+#include "netinet/tcp.h"
+#include "netinet/udp.h"
 
 /*!
  * @brief Get the IP header

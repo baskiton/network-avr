@@ -4,10 +4,10 @@
 #include "net/net.h"
 #include "net/net_dev.h"
 #include "net/ether.h"
-#include "net/arp.h"
-#include "net/ip.h"
 #include "net/pkt_handler.h"
 #include "net/ipconfig.h"
+#include "netinet/arp.h"
+#include "netinet/ip.h"
 
 struct arp_tbl_entry_s arp_tbl;
 

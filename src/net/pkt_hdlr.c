@@ -3,6 +3,7 @@
 #include "net/net.h"
 #include "net/ether.h"
 #include "net/pkt_handler.h"
+#include "arpa/inet.h"
 
 /*!
  * @brief Handlers for specific protocols.

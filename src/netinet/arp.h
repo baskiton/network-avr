@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
-#include "net.h"
-#include "ether.h"
-#include "ip.h"
+#include "net/net.h"
+#include "net/ether.h"
+#include "netinet/ip.h"
 
 struct __attribute__((packed)) arp_tbl_entry_s {
     uint32_t ip;

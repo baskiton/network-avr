@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define TCP_NODELAY 1   // Don't delay send to coalesce packets
+
 struct tcp_hdr_s {
     uint16_t port_src;  // Source port
     uint16_t port_dst;  // Destination port

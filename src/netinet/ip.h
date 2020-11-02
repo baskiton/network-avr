@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "net.h"
+#include "net/net.h"
+#include "arpa/inet.h"
 
 #define IP4_LEN 4
 #define IP6_LEN 6

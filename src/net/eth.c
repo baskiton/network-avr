@@ -8,6 +8,7 @@
 #include "net/ether.h"
 #include "net/net.h"
 #include "net/net_dev.h"
+#include "arpa/inet.h"
 
 /*!
  * @brief Create the Ethernet Header

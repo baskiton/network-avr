@@ -7,11 +7,11 @@
 
 #include "net/net.h"
 #include "net/ether.h"
-#include "net/arp.h"
-#include "net/ip.h"
-#include "net/tcp.h"
-#include "net/udp.h"
-#include "net/icmp.h"
+#include "netinet/arp.h"
+#include "netinet/ip.h"
+#include "netinet/tcp.h"
+#include "netinet/udp.h"
+#include "netinet/icmp.h"
 
 /*!
  * @brief Allocate a Network buffer
@@ -164,4 +164,36 @@ uint32_t ip_addr_parse(const char *ip_str) {
 void inet_init(void) {
     arp_init();
     ip_init();
+}
+
+/*!
+ * @brief Create INET socket
+ * @param sk Pointer to Socket
+ * @param protocol Inet Protocol (e.g. IP_PROTO_TCP). If 0 then
+ *      sets by default
+ * @return 0 on success
+ */
+int8_t inet_sock_create(struct socket *sk, uint8_t protocol) {
+    /** if \p protocol == 0, set default value */
+    if (!protocol) {
+        switch (sk->type) {
+            case SOCK_STREAM:
+                protocol = IP_PROTO_TCP;
+                break;
+            case SOCK_DGRAM:
+                protocol = IP_PROTO_UDP;
+                break;
+            case SOCK_RAW:
+                protocol = IP_PROTO_RAW;
+                break;
+            case SOCK_SEQPACKET:
+                protocol = IP_PROTO_IP;
+                break;
+            default:
+                // EPROTOTYPE
+                return -1;
+        }
+    }
+
+    return 0;
 }
