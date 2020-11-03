@@ -42,7 +42,16 @@ struct sockaddr;
  * @param bind
  */
 struct protocol_ops {
-    int8_t (*bind)(struct socket *sk, const struct sockaddr *addr);
+    struct socket *(*accept)(struct socket *restrict sk,
+                             struct sockaddr *restrict addr,
+                             socklen_t *restrict addr_len);
+    int8_t (*bind)(struct socket *sk,
+            const struct sockaddr *addr,
+            socklen_t addr_len);
+    int8_t (*connect)(struct socket *sk,
+                      const struct sockaddr *addr,
+                      socklen_t addr_len);
+    int8_t (*listen)(struct socket *sk, uint8_t backlog);
 };
 
 /**

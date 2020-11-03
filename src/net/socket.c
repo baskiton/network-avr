@@ -33,7 +33,7 @@ int8_t bind(struct socket *sk,
     int8_t err = -1;
 
     if (sk) {
-        err = sk->p_ops->bind(sk, addr);
+        err = sk->p_ops->bind(sk, addr, addr_len);
     }
     return err;
 }
