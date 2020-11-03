@@ -111,7 +111,7 @@ out:
  * @brief Initialize ICMP handler
  */
 void icmp_init(void) {
-    ip_proto_handler_add(IP_PROTO_ICMP, icmp_recv);
+    ip_proto_handler_add(IPPROTO_ICMP, icmp_recv);
 }
 
 /*!

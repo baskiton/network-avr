@@ -1,5 +1,5 @@
-#ifndef ICMP_H
-#define ICMP_H
+#ifndef NETINET_ICMP_H
+#define NETINET_ICMP_H
 
 #include <stdint.h>
 
@@ -38,4 +38,4 @@ int8_t icmp_hdr_create(struct net_buff_s *nb,
                        uint32_t hdr_data, const void *data,
                        uint16_t data_len);
 
-#endif  /* !ICMP_H */
+#endif  /* !NETINET_ICMP_H */

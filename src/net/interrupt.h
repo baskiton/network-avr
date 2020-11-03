@@ -1,5 +1,5 @@
-#ifndef INTERRUPT_H
-#define INTERRUPT_H
+#ifndef NET_INTERRUPT_H
+#define NET_INTERRUPT_H
 
 #include <stdint.h>
 
@@ -12,4 +12,4 @@ void net_dev_irq_handler(void);
 int8_t irq_hdlr_add(struct net_dev_s *net_dev);
 void irq_hdlr_del(void);
 
-#endif  /* !INTERRUPT_H */
+#endif  /* !NET_INTERRUPT_H */

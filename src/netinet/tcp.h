@@ -1,13 +1,15 @@
-#ifndef TCP_H
-#define TCP_H
+#ifndef NETINET_TCP_H
+#define NETINET_TCP_H
 
 #include <stdint.h>
+
+#include "netinet/in.h"
 
 #define TCP_NODELAY 1   // Don't delay send to coalesce packets
 
 struct tcp_hdr_s {
-    uint16_t port_src;  // Source port
-    uint16_t port_dst;  // Destination port
+    in_port_t port_src; // Source port
+    in_port_t port_dst; // Destination port
     uint32_t seq_num;   // Sequence Number
     uint32_t ack_num;   // Acknowledgment Number (if ACK set)
     uint16_t ns : 1;    // ECN-nonce - concealment protection
@@ -55,4 +57,4 @@ struct tcp_opt_field_s {
 
 void tcp_init(void);
 
-#endif  /* !TCP_H */
+#endif  /* !NETINET_TCP_H */

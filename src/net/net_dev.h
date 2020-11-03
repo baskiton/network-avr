@@ -1,5 +1,5 @@
-#ifndef NET_DEV_H
-#define NET_DEV_H
+#ifndef NET_NET_DEV_H
+#define NET_NET_DEV_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -189,4 +189,4 @@ void netdev_set_rx_mode(struct net_dev_s *net_dev);
 int8_t netdev_set_mac_addr(struct net_dev_s *net_dev, const void *addr);
 int8_t netdev_start_tx(struct net_buff_s *net_buff);
 
-#endif  /* !NET_DEV_H */
+#endif  /* !NET_NET_DEV_H */

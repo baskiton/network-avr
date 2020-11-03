@@ -15,6 +15,7 @@
 #define ntohl(x) bswap_32(x)    // Converted value from network to host byte order
 #define ntohll(x) bswap_64(x)   // Converted value from network to host byte order
 
+int8_t inet_aton(const char *cp, struct in_addr *inp);
 in_addr_t inet_addr(const char *cp);
 char *inet_ntoa(struct in_addr in);
 const char *inet_ntop(int af, const void *restrict src,

@@ -16,7 +16,7 @@ struct arp_tbl_entry_s arp_tbl;
  * @param ip IP address to set
  * @param mac MAC address to set
  */
-void arp_tbl_set(uint8_t *ip, uint8_t *mac) {
+void arp_tbl_set(uint8_t *restrict ip, uint8_t *restrict mac) {
     if (memcmp(&arp_tbl.ip, ip, IP4_LEN))
         memcpy(&arp_tbl.ip, ip, IP4_LEN);
 
@@ -153,7 +153,7 @@ void arp_init(void) {
  * @brief Create the ARP packet
  * @param net_dev Network device
  * @param oper Operation Type (reply or request)
- * @param ptype Protocol Type (for ARP header, e.g. IPv4)
+ * @param ptype Protocol Type (for ARP header, e.g. ETH_P_IP)
  * @param dest_hw Destination MAC (for Link layer header (ethernet)).
  *                  If \a NULL, it set as broadcast.
  * @param sha Source MAC (migth be \a NULL)

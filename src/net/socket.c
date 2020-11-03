@@ -13,9 +13,9 @@
  * @param addr_len Length of \p addr
  * @return New Socket pointer or NULL if error
  */
-struct socket *accept(struct socket *sk,
-                      struct sockaddr *addr,
-                      socklen_t *addr_len) {
+struct socket *accept(struct socket *restrict sk,
+                      struct sockaddr *restrict addr,
+                      socklen_t *restrict addr_len) {
 
     return NULL;
 }
@@ -76,7 +76,10 @@ int8_t listen(struct socket *sk, uint8_t backlog) {
  * @param flag Flag (MSG_PEEK, MSG_OOB, MSG_WAITALL)
  * @return Number of received bytes or -1 for error
  */
-ssize_t recv(struct socket *sk, void *buff, size_t buff_size, uint8_t flag) {
+ssize_t recv(struct socket *restrict sk,
+             void *restrict buff,
+             size_t buff_size,
+             uint8_t flag) {
     return recvfrom(sk, buff, buff_size, flag, NULL, NULL);
 }
 
@@ -93,8 +96,12 @@ ssize_t recv(struct socket *sk, void *buff, size_t buff_size, uint8_t flag) {
  * @param addr_len Length of \p addr
  * @return Number of received bytes or -1 for error
  */
-ssize_t recvfrom(struct socket *sk, void *buff, size_t buff_size, uint8_t flag,
-                 struct sockaddr *addr, socklen_t *addr_len) {
+ssize_t recvfrom(struct socket *restrict sk,
+                 void *restrict buff,
+                 size_t buff_size,
+                 uint8_t flag,
+                 struct sockaddr *restrict addr,
+                 socklen_t *restrict addr_len) {
 
     return 0;
 }

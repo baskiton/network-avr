@@ -1,5 +1,5 @@
-#ifndef NET_H
-#define NET_H
+#ifndef NET_NET_H
+#define NET_NET_H
 
 #include <stdint.h>
 
@@ -8,20 +8,7 @@
 #include "net/ether.h"
 #include "net/net_dev.h"
 #include "net/socket.h"
-
-#define IP_PROTO_IP         0   // Dummy protocol for TCP
-#define IP_PROTO_ICMP       1   // Internet Control Message Protocol
-#define IP_PROTO_TCP        6   // Transmission Control Protocol
-#define IP_PROTO_UDP        17  // User Datagram Protocol
-#define IP_PROTO_IPV6       41  // IPv6-in-IPv4 tunnelling
-#define IP_PROTO_RAW        255 // Raw IP packet
-
-#define ETH_HDR_ALIGN 2
-
-#define IN_ADDR_ANY ((uint32_t)0x00000000)          // 0.0.0.0
-#define IN_ADDR_BROADCAST ((uint32_t)0xFFFFFFFF)    // 255.255.255.255
-#define IN_ADDR_NONE ((uint32_t)0xFFFFFFFF)         // 255.255.255.255
-#define IN_ADDR_LOOPBACK ((uint32_t)0x7F000001)     // 127.0.0.1
+#include "netinet/in.h"
 
 #define IN_CLASS_A 0
 #define IN_CLASS_A_MASK 0xFF000000  // 255.0.0.0
@@ -109,10 +96,9 @@ struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size)
 void *put_net_buff(struct net_buff_s *net_buff, uint16_t len);
 void free_net_buff(struct net_buff_s *net_buff);
 
-int8_t net_class_determine(const void *ip, uint32_t *netmask);
-uint32_t ip_addr_parse(const char *ip_str);
+int8_t net_class_determine(const void *restrict ip, in_addr_t *restrict netmask);
 
 void inet_init(void);
 int8_t inet_sock_create(struct socket *sk, uint8_t protocol);
 
-#endif  /* !NET_H */
+#endif  /* !NET_NET_H */

@@ -1,5 +1,5 @@
-#ifndef ETHER_H
-#define ETHER_H
+#ifndef NET_ETHER_H
+#define NET_ETHER_H
 
 #include <stdint.h>
 
@@ -9,6 +9,7 @@
 #define ETH_MAC_LEN 6U
 #define ETH_HDR_LEN 14U
 
+/* Ether Types */
 #define ETH_P_IP        0x0800  // Internet Protocol
 #define ETH_P_ARP       0x0806  // Address Resolution Protocol
 #define ETH_P_IPV6      0x86DD  // Internet Protocol Version 6 (IPv6)
@@ -33,4 +34,4 @@ void ether_setup(struct net_dev_s *net_dev);
 struct net_dev_s *eth_dev_alloc(uint8_t size);
 uint16_t eth_type_proto(struct net_buff_s *net_buff, struct net_dev_s *net_dev);
 
-#endif  /* !ETHER_H */
+#endif  /* !NET_ETHER_H */

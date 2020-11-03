@@ -2,8 +2,8 @@
  * SOCKET: Transport Layer Interface (OSI Layer 4)
  */
 
-#ifndef SOCKET_H
-#define SOCKET_H
+#ifndef NET_SOCKET_H
+#define NET_SOCKET_H
 
 #include <stdint.h>
 #include <stdio.h>
@@ -58,7 +58,7 @@ typedef uint8_t sa_family_t;
 
 struct sockaddr {
     sa_family_t sa_family;  // Address family
-    uint8_t sa_data[6];    // Socket address
+    uint8_t sa_data[6];     // Socket address
 };
 
 struct sockaddr_storage {
@@ -72,9 +72,9 @@ struct socket {
     FILE *file;
 };
 
-struct socket *accept(struct socket *sk,
-                      struct sockaddr *addr,
-                      socklen_t *addr_len);
+struct socket *accept(struct socket *restrict sk,
+                      struct sockaddr *restrict addr,
+                      socklen_t *restrict addr_len);
 int8_t bind(struct socket *sk,
             const struct sockaddr *addr,
             socklen_t addr_len);
@@ -82,9 +82,16 @@ int8_t connect(struct socket *sk,
                const struct sockaddr *addr,
                socklen_t addr_len);
 int8_t listen(struct socket *sk, uint8_t backlog);
-ssize_t recv(struct socket *sk, void *buff, size_t buff_size, uint8_t flag);
-ssize_t recvfrom(struct socket *sk, void *buff, size_t buff_size, uint8_t flag,
-                 struct sockaddr *addr, socklen_t *addr_len);
+ssize_t recv(struct socket *restrict sk,
+             void *restrict buff,
+             size_t buff_size,
+             uint8_t flag);
+ssize_t recvfrom(struct socket *restrict sk,
+                 void *restrict buff,
+                 size_t buff_size,
+                 uint8_t flag,
+                 struct sockaddr *restrict addr,
+                 socklen_t *restrict addr_len);
 ssize_t send(struct socket *sk, const void *buff,
              size_t buff_size, uint8_t flag);
 ssize_t sendto(struct socket *sk, const void *buff, size_t buff_size,
@@ -93,4 +100,4 @@ int8_t shutdown(struct socket *sk, uint8_t flag);
 struct socket *socket(struct socket *sk, uint8_t family,
                       uint8_t type, uint8_t protocol);
 
-#endif  /* !SOCKET_H */
+#endif  /* !NET_SOCKET_H */

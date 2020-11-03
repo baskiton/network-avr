@@ -12,15 +12,17 @@
 #include "net/ipconfig.h"
 #include "net/checksum.h"
 #include "net/pkt_handler.h"
+#include "arpa/inet.h"
+#include "netinet/in.h"
 #include "netinet/ip.h"
 #include "netinet/udp.h"
 
-uint32_t my_ip = htonl(IN_ADDR_NONE);       // My IP Address
-uint32_t net_mask = htonl(IN_ADDR_NONE);    // Netmask for local subnet
-uint32_t gateway = htonl(IN_ADDR_NONE);     // Gateway IP Address
-uint32_t dns_serv = htonl(IN_ADDR_NONE);    // DNS server IP Address
+in_addr_t my_ip = htonl(INADDR_NONE);       // My IP Address
+in_addr_t net_mask = htonl(INADDR_NONE);    // Netmask for local subnet
+in_addr_t gateway = htonl(INADDR_NONE);     // Gateway IP Address
+in_addr_t dns_serv = htonl(INADDR_NONE);    // DNS server IP Address
 
-static uint32_t serv_addr = htonl(IN_ADDR_NONE);    // Boot server IP Address
+static in_addr_t serv_addr = htonl(INADDR_NONE);    // Boot server IP Address
 static uint32_t xid = 0;
 
 static const uint8_t dhcp_magic_cookie[4] PROGMEM = {99, 130, 83, 99};
@@ -73,10 +75,10 @@ struct dhcp_pkt_s {
     uint32_t xid;           // transaction ID
     uint16_t secs;          // seconds since started. may not be used (set to 0)
     uint16_t flags;         // DHCP special parameters
-    uint32_t ciaddr;        // client IP, if known
-    uint32_t yiaddr;        // assigned IP
-    uint32_t siaddr;        // next server IP
-    uint32_t giaddr;        // relay agent IP
+    in_addr_t ciaddr;       // client IP, if known
+    in_addr_t yiaddr;       // assigned IP
+    in_addr_t siaddr;       // next server IP
+    in_addr_t giaddr;       // relay agent IP
     uint8_t chaddr[16];     // client HW addr
     uint8_t sname[64];      // server name (null-terminated string, optional)
     uint8_t file[128];      // file name on server (null-terminated string, optional)
@@ -113,7 +115,7 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff) {
 
     // check receive protocol
     if ((iph->ihl != 5) || (iph->version != 4) ||
-        (iph->protocol != IP_PROTO_UDP))
+        (iph->protocol != IPPROTO_UDP))
         goto out;
     
     // fragmentation not support
@@ -144,7 +146,7 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff) {
     if (opt_len >= 4 && !memcmp_P(pkt->options, dhcp_magic_cookie, 4)) {
         uint8_t *end = (void *)pkt + htons(pkt->iph.tot_len);
         uint8_t *opt_p = pkt->options + 4;
-        uint32_t srv_id = htonl(IN_ADDR_NONE);
+        in_addr_t srv_id = htonl(INADDR_NONE);
         uint8_t msg_type;
 
         // getting DHCP options from reply
@@ -175,11 +177,11 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff) {
 
         switch (msg_type) {
             case DHCP_OFFER:
-                if (my_ip != htonl(IN_ADDR_NONE))
+                if (my_ip != htonl(INADDR_NONE))
                     goto out;
                 my_ip = pkt->yiaddr;
                 serv_addr = srv_id;
-                if ((serv_addr != htonl(IN_ADDR_NONE)) &&
+                if ((serv_addr != htonl(INADDR_NONE)) &&
                     (serv_addr != pkt->siaddr))
                     pkt->siaddr = serv_addr;
                 break;
@@ -191,8 +193,8 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff) {
                 break;
 
             default:    // failed
-                my_ip = htonl(IN_ADDR_NONE);
-                serv_addr = htonl(IN_ADDR_NONE);
+                my_ip = htonl(INADDR_NONE);
+                serv_addr = htonl(INADDR_NONE);
                 goto out;
         }
         dhcp_msg_type = msg_type;
@@ -232,9 +234,9 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff) {
     }
 
     my_ip = pkt->yiaddr;
-    if (serv_addr == htonl(IN_ADDR_NONE))
+    if (serv_addr == htonl(INADDR_NONE))
         serv_addr = pkt->siaddr;
-    if ((gateway == htonl(IN_ADDR_NONE)) && (pkt->giaddr))
+    if ((gateway == htonl(INADDR_NONE)) && (pkt->giaddr))
         gateway = pkt->giaddr;
     got_reply = true;
 
@@ -250,7 +252,7 @@ out:
  */
 static void dhcp_options_init(uint8_t *options) {
     uint8_t *opt = options;
-    uint8_t msg_type = ((serv_addr == htonl(IN_ADDR_NONE)) ?
+    uint8_t msg_type = ((serv_addr == htonl(INADDR_NONE)) ?
                         DHCP_DISCOVER : DHCP_REQUEST);
     
     memcpy_P(opt, dhcp_magic_cookie, 4);    // RFC 1048 Magic Cookie
@@ -316,8 +318,8 @@ static void dhcp_send_request(void) {
     pkt->iph.tot_len = htons(sizeof(struct dhcp_pkt_s));
     pkt->iph.frag_off = htons(IP_DF);
     pkt->iph.ttl = 64;
-    pkt->iph.protocol = IP_PROTO_UDP;
-    pkt->iph.ip_dst = htonl(IN_ADDR_BROADCAST);
+    pkt->iph.protocol = IPPROTO_UDP;
+    pkt->iph.ip_dst = htonl(INADDR_BROADCAST);
     pkt->iph.hdr_chks = in_checksum(&pkt->iph, pkt->iph.ihl * 4);
     /** \c tos, \c id and \c ip_src is already zero */
 
@@ -405,7 +407,7 @@ static int8_t dhcp(void) {
     pkt_hdlr_del(ETH_P_IP);
 
     if (!got_reply) {
-        my_ip = htonl(IN_ADDR_NONE);
+        my_ip = htonl(INADDR_NONE);
         return -1;
     }
 
@@ -436,7 +438,7 @@ int8_t ip_auto_config(void) {
         return err;
     }
 
-    if (my_ip == htonl(IN_ADDR_NONE)) {
+    if (my_ip == htonl(INADDR_NONE)) {
         // loop until link status is UP
         while (!net_dev_link_is_up(curr_net_dev)) {
             /** BUG: for some reason does not work without delay */
@@ -452,7 +454,7 @@ int8_t ip_auto_config(void) {
         }
     }
 
-    if (net_mask == htonl(IN_ADDR_NONE)) {
+    if (net_mask == htonl(INADDR_NONE)) {
         err = net_class_determine(&my_ip, &net_mask);
         if ((err < 0) || (err >= IN_CLASS_D)) {
             printf_P(PSTR("Error: IP config: This IP address is reserved and "
@@ -487,16 +489,16 @@ int8_t ip_auto_config(void) {
 int8_t ip_config(const char *ip, const char *nm,
                  const char *gw, const char *dns) {
     if (ip && (ip[0] != '\0'))
-        my_ip = ip_addr_parse(ip);
+        my_ip = inet_addr(ip);
 
     if (nm && (nm[0] != '\0'))
-        net_mask = ip_addr_parse(nm);
+        net_mask = inet_addr(nm);
 
     if (gw && (gw[0] != '\0'))
-        gateway = ip_addr_parse(gw);
+        gateway = inet_addr(gw);
 
     if (dns && (dns[0] != '\0'))
-        dns_serv = ip_addr_parse(dns);
+        dns_serv = inet_addr(dns);
 
     return ip_auto_config();
 }

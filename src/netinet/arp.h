@@ -1,5 +1,5 @@
-#ifndef ARP_H
-#define ARP_H
+#ifndef NETINET_ARP_H
+#define NETINET_ARP_H
 
 #include <stdint.h>
 
@@ -8,7 +8,7 @@
 #include "netinet/ip.h"
 
 struct __attribute__((packed)) arp_tbl_entry_s {
-    uint32_t ip;
+    in_addr_t ip;
     uint8_t mac[ETH_MAC_LEN];
 };
 
@@ -32,7 +32,7 @@ struct arp_hdr_s {
 #define ARP_OP_REQ 1    // ARP Request
 #define ARP_OP_REPLY 2  // ARP Reply
 
-void arp_tbl_set(uint8_t *ip, uint8_t *mac);
+void arp_tbl_set(uint8_t *restrict ip, uint8_t *restrict mac);
 uint8_t *arp_tbl_get(uint8_t *ip);
 
 void arp_init(void);
@@ -47,4 +47,4 @@ void arp_send(struct net_dev_s *net_dev,
               const uint8_t *sha, const uint8_t *spa,
               const uint8_t *tha, const uint8_t *tpa);
 
-#endif  /* !ARP_H */
+#endif  /* !NETINET_ARP_H */

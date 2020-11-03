@@ -96,7 +96,7 @@ void free_net_buff(struct net_buff_s *net_buff) {
  *                byte order (big-endian) or NULL
  * @return Number of Network Class; -1 if error
  */
-int8_t net_class_determine(const void *ip, uint32_t *netmask) {
+int8_t net_class_determine(const void *restrict ip, in_addr_t *restrict netmask) {
     int8_t ret = -1;
     uint8_t msb = *(uint8_t *)ip;
 
@@ -132,33 +132,6 @@ int8_t net_class_determine(const void *ip, uint32_t *netmask) {
 }
 
 /*!
- * @brief Convert IP addr from ASCII-string to binary
- * @param ip_str ASCII-string with IP-addr
- * @return Binary IP in Network byte order (big-endian)
- */
-uint32_t ip_addr_parse(const char *ip_str) {
-    uint32_t ip = 0;
-    char tmp_str[4] = {0, 0, 0, 0};
-    int8_t y;
-
-    for (int8_t i = 0; i < 4; i++) {
-        ip <<= 8;
-        y = 0;
-        memset(tmp_str, 0, 4);
-        while ((*ip_str != 0) && (*ip_str != '.') && (y < 3)) {
-            tmp_str[y] = *ip_str;
-            ip_str++;
-            y++;
-        }
-        ip |= atol(tmp_str);
-        if (*ip_str != 0)
-            ip_str++;
-    }
-
-    return htonl(ip);
-}
-
-/*!
  * @brief Initialize the handlers and others for IPv4
  */
 void inet_init(void) {
@@ -178,16 +151,16 @@ int8_t inet_sock_create(struct socket *sk, uint8_t protocol) {
     if (!protocol) {
         switch (sk->type) {
             case SOCK_STREAM:
-                protocol = IP_PROTO_TCP;
+                protocol = IPPROTO_TCP;
                 break;
             case SOCK_DGRAM:
-                protocol = IP_PROTO_UDP;
+                protocol = IPPROTO_UDP;
                 break;
             case SOCK_RAW:
-                protocol = IP_PROTO_RAW;
+                protocol = IPPROTO_RAW;
                 break;
             case SOCK_SEQPACKET:
-                protocol = IP_PROTO_IP;
+                protocol = IPPROTO_IP;
                 break;
             default:
                 // EPROTOTYPE

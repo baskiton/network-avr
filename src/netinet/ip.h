@@ -1,10 +1,11 @@
-#ifndef IP_H
-#define IP_H
+#ifndef NETINET_IP_H
+#define NETINET_IP_H
 
 #include <stdint.h>
 #include <stdbool.h>
 
 #include "net/net.h"
+#include "netinet/in.h"
 #include "arpa/inet.h"
 
 #define IP4_LEN 4
@@ -59,17 +60,17 @@ struct ip_hdr_s {
     uint16_t id;            // 
     uint16_t frag_off;      // Fragment offset with flags (in ms 3 bits)
     uint8_t ttl;            // Time To Life
-    uint8_t protocol;       // Protocol (TCP, ICMP, UDP... RFC 790)
+    uint8_t protocol;       // Protocol (TCP, ICMP, UDP... RFC 790, e.g. IPPROTO_TCP)
     uint16_t hdr_chks;      // Header Checksum
-    uint32_t ip_src;        // Source IP Address
-    uint32_t ip_dst;        // Destination IP Address
+    in_addr_t ip_src;       // Source IP Address
+    in_addr_t ip_dst;       // Destination IP Address
     /* options start here.
      * If ihl > 5
      * size: 0-10 * 32bits */
 };
 
 inline bool ip4_is_broadcast(const void *ip) {
-    return (*(uint32_t *)ip == htonl(IN_ADDR_BROADCAST));
+    return (*(in_addr_t *)ip == htonl(INADDR_BROADCAST));
 }
 
 inline bool ip4_is_multicast(const void *ip) {
@@ -81,7 +82,7 @@ inline bool ip4_is_loopback(const void *ip) {
 }
 
 inline bool ip4_is_zero(const void *ip) {
-    return (*(uint32_t *)ip == 0);
+    return (*(in_addr_t *)ip == 0);
 }
 
 struct ip_hdr_s *get_ip_hdr(struct net_buff_s *net_buff);
@@ -91,4 +92,4 @@ int8_t ip_proto_handler(uint8_t proto, struct net_buff_s *net_buff);
 void ip_proto_handler_add(uint8_t proto, proto_hdlr_t handler);
 void ip_proto_handler_del(uint8_t proto);
 
-#endif  /* !IP_H */
+#endif  /* !NETINET_IP_H */
