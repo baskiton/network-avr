@@ -1,6 +1,8 @@
 #ifndef NET_NET_DEV_H
 #define NET_NET_DEV_H
 
+#include <avr/pgmspace.h>
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -173,10 +175,13 @@ inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
  * @return 0 if success
  */
 inline int8_t netdev_set_settings(struct net_dev_s *net_dev, bool full_duplex) {
-    if (!net_dev->netdev_ops->set_dev_settings)
+    typedef int8_t (*func_t)(struct net_dev_s *, bool);
+    func_t f = pgm_read_ptr(&net_dev->netdev_ops->set_dev_settings);
+
+    if (!f)
         return -1;  // EOPNOTSUPP
 
-    return net_dev->netdev_ops->set_dev_settings(net_dev, full_duplex);
+    return f(net_dev, full_duplex);
 }
 
 struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *));
