@@ -36,6 +36,7 @@
 
 struct socket;
 struct sockaddr;
+struct msghdr;
 
 /**
  * @brief
@@ -43,15 +44,19 @@ struct sockaddr;
  */
 struct protocol_ops {
     struct socket *(*accept)(struct socket *restrict sk,
-                             struct sockaddr *restrict addr,
-                             socklen_t *restrict addr_len);
+                             struct socket *restrict new_sk);
     int8_t (*bind)(struct socket *sk,
-            const struct sockaddr *addr,
-            socklen_t addr_len);
+                   const struct sockaddr *addr,
+                   uint8_t addr_len);
     int8_t (*connect)(struct socket *sk,
                       const struct sockaddr *addr,
-                      socklen_t addr_len);
+                      uint8_t addr_len);
     int8_t (*listen)(struct socket *sk, uint8_t backlog);
+    ssize_t (*sendmsg)(struct socket *restrict sk,
+                       struct msghdr *restrict msg);
+    ssize_t (*recvmsg)(struct socket *restrict sk,
+                       struct msghdr *restrict msg,
+                       size_t len, uint8_t flags);
 };
 
 /**
@@ -105,9 +110,6 @@ struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size)
 void *put_net_buff(struct net_buff_s *net_buff, uint16_t len);
 void free_net_buff(struct net_buff_s *net_buff);
 
-int8_t net_class_determine(const void *restrict ip, in_addr_t *restrict netmask);
-
-void inet_init(void);
-int8_t inet_sock_create(struct socket *sk, uint8_t protocol);
+void network_init(void);
 
 #endif  /* !NET_NET_H */

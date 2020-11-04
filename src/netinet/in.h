@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#include "net/socket.h"
-
 typedef uint16_t in_port_t;
 typedef uint32_t in_addr_t;
 
@@ -13,6 +11,7 @@ struct in_addr {
     in_addr_t s_addr;
 };
 
+#include "net/socket.h"
 #include "arpa/inet.h"
 
 struct sockaddr_in {

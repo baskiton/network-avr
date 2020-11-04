@@ -6,10 +6,7 @@
 #define NET_SOCKET_H
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stddef.h>
-
-//#include "net/net.h"
 
 /* Address Families */
 #define AF_UNSPEC 0 // Unspecified
@@ -30,9 +27,9 @@
 /* Socket Types */
 #define SOCK_STREAM 1       // stream (connection) socket
 #define SOCK_DGRAM 2        // datagram (conn.less) socket
-#define SOCK_RAW 3          // raw socket
-#define SOCK_SEQPACKET 4    // sequenced-packet socket
-#define SOCK_MAX 5
+// #define SOCK_RAW 3          // raw socket
+// #define SOCK_SEQPACKET 4    // sequenced-packet socket
+#define SOCK_MAX 3
 
 /* Sutdown Flags */
 #define SHUT_RD 0   // Disables further receive operations
@@ -56,6 +53,10 @@ typedef uint8_t sa_family_t;
     typedef int16_t ssize_t;
 #endif
 
+#include "net/net.h"
+#include "net/uio.h"
+#include "netinet/in.h"
+
 struct sockaddr {
     sa_family_t sa_family;  // Address family
     uint8_t sa_data[6];     // Socket address
@@ -65,12 +66,44 @@ struct sockaddr_storage {
     sa_family_t ss_family;
 };
 
+struct msghdr {
+    void *msg_name;         // ptr to socket address structure
+    socklen_t msg_namelen;  // size of socket address structure
+    struct iovec *msg_iov;  // data
+    uint8_t msg_flags;      // flags on received message
+};
+
 struct socket {
     uint8_t state : 4;  // Socket State (e.g. SS_CONNECTED)
     uint8_t type : 4;   // Socket Type (e.g. SOCK_STREAM)
     struct protocol_ops *p_ops;
-    FILE *file;
+
+    union {
+        uint64_t addr_pair;
+        struct {
+            in_addr_t dst_addr; // destination address
+            in_addr_t src_addr; // source address
+        };
+    };
+    union {
+        uint32_t port_pair;
+        struct {
+            in_port_t dst_port; // destination port
+            in_port_t src_port; // source port
+        };
+    };
+    uint32_t sk_hash;   // port-addr hash used for lookup
+
+    uint8_t protocol;
+
+    struct net_buff_s *nb_tx;   // transmit buffer
+    struct net_buff_s *nb_rx;   // receive buffer
+
+    struct socket *prev,    // prev socket in list
+                  *next;    // next socket in list
 };
+
+struct socket *socket_list;
 
 struct socket *accept(struct socket *restrict sk,
                       struct sockaddr *restrict addr,

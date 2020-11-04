@@ -6,6 +6,7 @@
 #include "net/ether.h"
 #include "net/pkt_handler.h"
 #include "net/ipconfig.h"
+#include "arpa/inet.h"
 #include "netinet/arp.h"
 #include "netinet/ip.h"
 
@@ -65,7 +66,7 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
         goto free_buf;
 
     /* Check for multicast and loopback target IP */
-    if ((net_class_determine(arph->tpa, NULL) == IN_CLASS_D) ||
+    if ((inet_class_determine(arph->tpa, NULL) == IN_CLASS_D) ||
         ((arph->tpa[0] & 0xF0) == 0x7F))
         goto free_buf;
 

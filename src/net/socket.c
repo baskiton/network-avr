@@ -1,8 +1,11 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "net/net.h"
 #include "net/socket.h"
+
+extern int8_t inet_sock_create(struct socket *sk, uint8_t protocol);
 
 /*!
  * @brief Used on \a server side. Accepts a received incoming attempt
@@ -201,6 +204,8 @@ struct socket *socket(struct socket *sk, uint8_t family,
         // ENOMEM
         return NULL;
 
+    memset(sock, 0, sizeof(struct socket));
+
     sock->type = type;
 
     switch (family) {
@@ -213,7 +218,7 @@ struct socket *socket(struct socket *sk, uint8_t family,
             err = -1;
             break;
     }
-    if (err < 0)
+    if (err)
         goto release;
 
     return sock;

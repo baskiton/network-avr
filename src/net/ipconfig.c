@@ -455,7 +455,7 @@ int8_t ip_auto_config(void) {
     }
 
     if (net_mask == htonl(INADDR_NONE)) {
-        err = net_class_determine(&my_ip, &net_mask);
+        err = inet_class_determine(&my_ip, &net_mask);
         if ((err < 0) || (err >= IN_CLASS_D)) {
             printf_P(PSTR("Error: IP config: This IP address is reserved and "
                           "cannot be assigned to a network or host.\n"));
