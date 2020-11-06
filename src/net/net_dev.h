@@ -161,10 +161,16 @@ inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
                                 int16_t type,
                                 const void *d_addr, const void *s_addr,
                                 int16_t len) {
-    if (!net_dev->header_ops || !net_dev->header_ops->create)
+    typedef int8_t (*func_t)(struct net_buff_s *, struct net_dev_s *,
+                             int16_t, const void *, const void *,
+                             int16_t );
+    func_t f;
+
+    if (!net_dev->header_ops ||
+        !(f = pgm_read_ptr(&net_dev->header_ops->create)))
         return -1;
-    
-    return net_dev->header_ops->create(net_buff, net_dev, type, d_addr, s_addr, len);
+
+    return f(net_buff, net_dev, type, d_addr, s_addr, len);
 }
 
 /*!
