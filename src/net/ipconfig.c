@@ -225,7 +225,7 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff) {
                 
                 case DHCP_OPT_DNAME:
                     /* code */
-                    break;
+                    // break;
                 
                 default:
                     break;

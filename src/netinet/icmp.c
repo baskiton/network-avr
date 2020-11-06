@@ -34,8 +34,9 @@ static inline bool icmp_is_query(uint8_t type) {
         case ICMP_ADDRESS_REPLY:
         // */
             return true;
+        default:
+            return false;
     }
-    return false;
 }
 
 /*!

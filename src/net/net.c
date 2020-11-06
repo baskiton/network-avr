@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "net/net.h"
+#include "net/net_dev.h"
 #include "net/ether.h"
 #include "netinet/arp.h"
 #include "netinet/ip.h"

@@ -83,7 +83,7 @@ in_addr_t inet_addr(const char *cp) {
             cp++;
             y++;
         }
-        ip |= atol(tmp_str);
+        ip |= (atol(tmp_str) & 0xFF);
         if (*cp != 0)
             cp++;
     }

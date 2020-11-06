@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#include "net/checksum.h"
+
 /*!
  * @brief Compute Internet Checksum.
  * RFC 1071: https://tools.ietf.org/html/rfc1071
@@ -7,7 +9,7 @@
  * @param count Length of data buffer in bytes
  * @return 16-bit checksum
  */
-uint16_t in_checksum(void *buf, int16_t count) {
+uint16_t in_checksum(void *buf, uint16_t count) {
     uint32_t sum = 0;
     uint16_t *ptr = buf;
 
