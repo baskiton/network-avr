@@ -1,11 +1,56 @@
+#include <avr/pgmspace.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "net/net.h"
 #include "net/socket.h"
+#include "net/uio.h"
 
 extern int8_t inet_sock_create(struct socket *sk, uint8_t protocol);
+
+/* List of sockets */
+struct socket *socket_list;
+
+void socket_list_init(void) {
+    socket_list->next = socket_list->prev = NULL;
+}
+
+/*!
+ * @brief Add socket entry to the beginning of the socket list
+ * @param new New entry to be added
+ */
+static void socket_list_add(struct socket *new) {
+    if (!socket_list) {
+        new->next = NULL;
+    } else {
+        socket_list->prev = new;
+        new->next = socket_list;
+    }
+    socket_list = new;
+    socket_list->prev = NULL;
+}
+
+/*!
+ * @brief Remove entry from socket list
+ * @param entry Socket to delete
+ */
+static void socket_list_del(struct socket *entry) {
+    if (entry->next)
+        entry->next->prev = entry->prev;
+    if (entry->prev)
+        entry->prev->next = entry->next;
+    else
+        socket_list = entry->next;
+}
+
+/*!
+ * @brief Iterate over a socket list
+ * @param i socket struct to iterate
+ */
+#define socket_list_for_each(i)   \
+        for (i = socket_list; i; i = i->next)
 
 /*!
  * @brief Used on \a server side. Accepts a received incoming attempt
@@ -34,9 +79,15 @@ int8_t bind(struct socket *sk,
             const struct sockaddr *addr,
             socklen_t addr_len) {
     int8_t err = -1;
+    typedef int8_t (*func_t)(struct socket *,
+                             const struct sockaddr *,
+                             uint8_t);
+    func_t f;
 
     if (sk) {
-        err = sk->p_ops->bind(sk, addr, addr_len);
+        f = pgm_read_ptr(&sk->p_ops->bind);
+        if (f)
+            err = f(sk, addr, addr_len);
     }
     return err;
 }
@@ -137,15 +188,31 @@ ssize_t send(struct socket *sk, const void *buff,
  */
 ssize_t sendto(struct socket *sk, const void *buff, size_t buff_size,
                uint8_t flag, const struct sockaddr *addr, socklen_t addr_len) {
-    
+    ssize_t ret;
+    struct msghdr msg;
+    struct iovec iov;
+
     if (!sk) {
         // errno
         return -1;
     }
 
     /** TODO: */
+    iovec_import(&iov, buff, buff_size);
 
-    return 0;
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+    msg.msg_flags = flag;
+
+    if (addr) {
+        msg.msg_name = addr;
+        msg.msg_namelen = addr_len;
+    }
+    typedef ssize_t (*func_t)(struct socket *, struct msghdr *);
+    func_t f = pgm_read_ptr(&sk->p_ops->sendmsg);
+    ret = f(sk, &msg);
+
+    return ret;
 }
 
 /*!
@@ -170,8 +237,7 @@ int8_t shutdown(struct socket *sk, uint8_t flag) {
  * @param protocol Protocol type (e.g. IPPROTO_TCP)
  * @return Pointer to Socket or NULL if error
  */
-struct socket *socket(struct socket *sk, uint8_t family,
-                      uint8_t type, uint8_t protocol) {
+struct socket *socket(uint8_t family, uint8_t type, uint8_t protocol) {
     /**
     The socket() function shall fail if:
     \c [EAFNOSUPPORT]
@@ -220,6 +286,8 @@ struct socket *socket(struct socket *sk, uint8_t family,
     }
     if (err)
         goto release;
+
+    socket_list_add(sock);
 
     return sock;
 

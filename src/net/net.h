@@ -9,6 +9,7 @@
 #include "net/net_dev.h"
 #include "net/socket.h"
 #include "netinet/in.h"
+#include "net/nb_queue.h"
 
 #define IN_CLASS_A 0
 #define IN_CLASS_A_MASK 0xFF000000  // 255.0.0.0
@@ -43,6 +44,8 @@ struct msghdr;
  * @param bind
  */
 struct protocol_ops {
+    int8_t (*release)(struct socket *sk);
+    int8_t (*shutdown)(struct socket *sk, uint8_t flags);
     struct socket *(*accept)(struct socket *restrict sk,
                              struct socket *restrict new_sk);
     int8_t (*bind)(struct socket *sk,
@@ -81,6 +84,9 @@ struct protocol_ops {
  * @param end End pointer
  */
 struct net_buff_s {
+    struct net_buff_s *next,
+                      *prev;
+
     struct net_dev_s *net_dev;
     struct socket *sock;
 

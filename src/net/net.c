@@ -96,8 +96,7 @@ void free_net_buff(struct net_buff_s *net_buff) {
  * @brief Initialize the net working
  */
 void network_init(void) {
-    socket_list->prev = NULL;
-    socket_list->next = NULL;
+    socket_list_init();
 
     inet_init();
 }

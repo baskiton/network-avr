@@ -56,6 +56,7 @@ typedef uint8_t sa_family_t;
 #include "net/net.h"
 #include "net/uio.h"
 #include "netinet/in.h"
+#include "net/nb_queue.h"
 
 struct sockaddr {
     sa_family_t sa_family;  // Address family
@@ -76,7 +77,7 @@ struct msghdr {
 struct socket {
     uint8_t state : 4;  // Socket State (e.g. SS_CONNECTED)
     uint8_t type : 4;   // Socket Type (e.g. SOCK_STREAM)
-    struct protocol_ops *p_ops;
+    const struct protocol_ops *p_ops;
 
     union {
         uint64_t addr_pair;
@@ -96,14 +97,14 @@ struct socket {
 
     uint8_t protocol;
 
-    struct net_buff_s *nb_tx;   // transmit buffer
-    struct net_buff_s *nb_rx;   // receive buffer
+    struct nb_queue_s nb_tx_q;  // transmit queue
+    struct nb_queue_s nb_rx_q;  // receive queue
 
     struct socket *prev,    // prev socket in list
                   *next;    // next socket in list
 };
 
-struct socket *socket_list;
+void socket_list_init(void);
 
 struct socket *accept(struct socket *restrict sk,
                       struct sockaddr *restrict addr,
@@ -130,7 +131,6 @@ ssize_t send(struct socket *sk, const void *buff,
 ssize_t sendto(struct socket *sk, const void *buff, size_t buff_size,
                uint8_t flag, const struct sockaddr *addr, socklen_t addr_len);
 int8_t shutdown(struct socket *sk, uint8_t flag);
-struct socket *socket(struct socket *sk, uint8_t family,
-                      uint8_t type, uint8_t protocol);
+struct socket *socket(uint8_t family, uint8_t type, uint8_t protocol);
 
 #endif  /* !NET_SOCKET_H */
