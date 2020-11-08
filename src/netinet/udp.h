@@ -13,5 +13,7 @@ struct udp_hdr_s {
 };
 
 void udp_init(void);
+ssize_t udp_send_msg(struct socket *restrict sk,
+                     struct msghdr *restrict msg);
 
 #endif  /* !NETINET_UDP_H */

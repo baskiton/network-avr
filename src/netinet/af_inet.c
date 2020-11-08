@@ -1,11 +1,54 @@
 #include <avr/pgmspace.h>
 
+#include "netinet/tcp.h"
+#include "netinet/udp.h"
+#include "netinet/icmp.h"
 #include "netinet/arp.h"
 #include "netinet/ip.h"
 #include "netinet/in.h"
 #include "net/socket.h"
 #include "net/net.h"
 #include "net/nb_queue.h"
+
+/*!
+ *
+ */
+static int8_t inet_release(struct socket *sk) {
+    switch (sk->protocol) {
+        case IPPROTO_TCP:
+            /* code */
+            break;
+        case IPPROTO_UDP:
+            /* code */
+            break;
+        case IPPROTO_ICMP:
+            /* code */
+            break;
+        case IPPROTO_RAW:
+            /* code */
+            break;
+        
+        default:
+            break;
+    }
+
+    return 0;
+}
+
+/*!
+ *
+ */
+static int8_t inet_shutdown(struct socket *sk, uint8_t how) {
+    if (how > 2)
+        // EINVAL
+        return -1;
+
+    /** TODO: */
+
+    sk->state = SS_UNCONNECTED;
+
+    return 0;
+}
 
 /*!
  *
@@ -31,6 +74,7 @@ static int8_t inet_bind(struct socket *sk,
     }
 
     if (sk->src_port)
+        /** TODO: get port number automaticly */
         goto out;
 
     sk->src_addr = addr_in->sin_addr.s_addr;
@@ -47,14 +91,31 @@ out:
  */
 static ssize_t inet_sendmsg(struct socket *restrict sk,
                             struct msghdr *restrict msg) {
+    if (!sk->src_port)
+        // src port cannot be zero
+        /** TODO: get port number automaticly */
+        return -1;
 
-    return 0;
+    switch (sk->protocol) {
+        case IPPROTO_TCP:
+            return tcp_send_msg(sk, msg);
+        case IPPROTO_UDP:
+            return udp_send_msg(sk, msg);
+        // case IPPROTO_ICMP:
+        //     return 0;
+        // case IPPROTO_RAW:
+        //     return 0;
+        
+        default:
+            // theoretically impossible, but still...
+            return -1;
+    }
 }
 
 /** TODO: */
 static const struct protocol_ops inet_stream_ops PROGMEM = {
-    .release = NULL,
-    .shutdown = NULL,
+    .release = inet_release,
+    .shutdown = inet_shutdown,
     .accept = NULL,
     .bind = inet_bind,
     .connect = NULL,
@@ -65,8 +126,8 @@ static const struct protocol_ops inet_stream_ops PROGMEM = {
 
 /** TODO: */
 static const struct protocol_ops inet_dgram_ops PROGMEM = {
-    .release = NULL,
-    .shutdown = NULL,
+    .release = inet_release,
+    .shutdown = inet_shutdown,
     .accept = NULL,
     .bind = inet_bind,
     .connect = NULL,

@@ -11,13 +11,4 @@ struct nb_queue_s {
     uint8_t q_len;
 };
 
-/*!
- * @brief Network Buffer queue initialize
- * @param q Queue
- */
-static inline void nb_queue_init(struct nb_queue_s *q) {
-    q->next = q->prev = (struct net_buff_s *)q;
-    q->q_len = 0;
-}
-
 #endif  /* !NET_NB_QUEUE_H */

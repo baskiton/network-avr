@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "netinet/in.h"
+#include "net/socket.h"
 
 #define TCP_NODELAY 1   // Don't delay send to coalesce packets
 
@@ -56,5 +57,7 @@ struct tcp_opt_field_s {
 };
 
 void tcp_init(void);
+ssize_t tcp_send_msg(struct socket *restrict sk,
+                     struct msghdr *restrict msg);
 
 #endif  /* !NETINET_TCP_H */
