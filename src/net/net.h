@@ -122,6 +122,7 @@ struct net_buff_s *net_buff_alloc(uint16_t size);
 struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size);
 void *put_net_buff(struct net_buff_s *net_buff, uint16_t len);
 void free_net_buff(struct net_buff_s *net_buff);
+void free_net_buff_list(struct net_buff_s *net_buff);
 
 void network_init(void);
 

@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "net/net.h"
 #include "net/net_dev.h"
@@ -42,7 +43,7 @@ static inline bool icmp_is_query(uint8_t type) {
 /*!
  * @brief Reply to Echo Request (ping)
  */
-static int8_t icmp_echo(struct net_buff_s *nb) {
+static bool icmp_echo(struct net_buff_s *nb) {
     struct net_dev_s *ndev = nb->net_dev;
     struct eth_header_s *eth_hdr = (void *)(nb->head + nb->mac_hdr_offset);
     struct ip_hdr_s *iph = get_ip_hdr(nb);
@@ -68,14 +69,16 @@ static int8_t icmp_echo(struct net_buff_s *nb) {
     icmp_h->chks = 0;
     icmp_h->chks = in_checksum(icmp_h, (ntohs(iph->tot_len) - iph->ihl * 4));
 
-    return netdev_start_tx(nb);
+    netdev_queue_xmit(nb);
+
+    return true;
 }
 
 /*!
  * @brief Handler for ICMP
  */
 int8_t icmp_recv(struct net_buff_s *nb) {
-    int8_t ret = NETDEV_RX_DROP;
+    bool ret = false;
     struct ip_hdr_s *iph = get_ip_hdr(nb);
     struct icmp_hdr_s *icmp_h = get_icmp_hdr(nb);
 
@@ -95,17 +98,19 @@ int8_t icmp_recv(struct net_buff_s *nb) {
     switch (icmp_h->type) {
         case ICMP_ECHO_REQ:
             ret = icmp_echo(nb);
-            goto out;
+            break;
         
         default:
-            ret = NETDEV_RX_SUCCESS;
+            ret = false;
             break;
     }
+    if (ret)
+        return NETDEV_RX_SUCCESS;
 
 drop:
     free_net_buff(nb);
-out:
-    return ret;
+
+    return NETDEV_RX_DROP;
 }
 
 /*!

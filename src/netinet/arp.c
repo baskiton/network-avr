@@ -45,6 +45,10 @@ static struct arp_hdr_s *get_arp_hdr(struct net_buff_s *net_buff) {
     return (void *)(net_buff->head + net_buff->network_hdr_offset);
 }
 
+static inline int8_t arp_xmit(struct net_buff_s *net_buff) {
+    return netdev_queue_xmit(net_buff);
+}
+
 /*!
  * @brief Process an ARP packet
  * @param net_buff Pointer to network buffer
@@ -80,8 +84,9 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
 
     /* Send reply if it is a REQUEST for us */
     if (arph->oper == htons(ARP_OP_REQ)) {
-        /* so far, the same net buffer is used that we received,
-            just overwrite the required fields. */
+        /** TODO: so far, the same net buffer is used that
+         * we received, just overwrite the required fields.
+         */
         net_buff->pkt_len -= 4;
         ndev = net_buff->net_dev;
         eth_hdr = (void *)(net_buff->head + net_buff->mac_hdr_offset);
@@ -100,7 +105,7 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
         memcpy(eth_hdr->mac_src, ndev->dev_addr, ETH_MAC_LEN);
 
         /* and finally, begin transmission... */
-        netdev_start_tx(net_buff);
+        arp_xmit(net_buff);
 
         ret = NETDEV_RX_SUCCESS;
         goto out;
@@ -223,16 +228,18 @@ out:
  * @param tha Target MAC (migth be \a NULL)
  * @param tpa Target IP
  */
-void arp_send(struct net_dev_s *net_dev,
-              uint16_t oper, uint16_t ptype,
-              const uint8_t *dest_hw,
-              const uint8_t *sha, const uint8_t *spa,
-              const uint8_t *tha, const uint8_t *tpa) {
+int8_t arp_send(struct net_dev_s *net_dev,
+                 uint16_t oper, uint16_t ptype,
+                 const uint8_t *dest_hw,
+                 const uint8_t *sha, const uint8_t *spa,
+                 const uint8_t *tha, const uint8_t *tpa) {
     struct net_buff_s *nb;
 
     nb = arp_create(net_dev, oper, ptype, dest_hw, sha, spa, tha, tpa);
-    if (!nb)
-        return;
+    if (!nb) {
+        printf_P(PSTR("arp_send(): failed to creating buffer\n"));
+        return -1;
+    }
 
-    netdev_start_tx(nb);
+    return arp_xmit(nb);
 }

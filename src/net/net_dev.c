@@ -133,29 +133,55 @@ void netdev_close(struct net_dev_s *net_dev) {
     net_dev_set_upstate_stop(net_dev);
 }
 
-/*!
- * @brief Start transmit a buffer
- * @param net_buff buffer to transmit
- * @return errno if error occured
- */
-int8_t netdev_start_tx(struct net_buff_s *net_buff) {
+static inline int8_t netdev_start_tx(struct net_buff_s *net_buff,
+                                     struct net_dev_s *net_dev) {
     typedef int8_t (*func_t)(struct net_buff_s *, struct net_dev_s *);
+    func_t start_tx_f = pgm_read_ptr(&net_dev->netdev_ops->start_tx);
+
+    return start_tx_f(net_buff, net_dev);   // start_tx()
+}
+
+/*!
+ * @brief Start transmit a queue of buffers
+ * @param net_buff buffer to transmit
+ * @return 0 on success
+ */
+int8_t netdev_queue_xmit(struct net_buff_s *net_buff) {
     struct net_dev_s *net_dev = net_buff->net_dev;
-    func_t f = pgm_read_ptr(&net_dev->netdev_ops->start_tx);
-    int8_t ret = -1;    // ENETDOWN
+    int8_t err;
 
     if (net_dev_upstate_is_run(net_dev) && net_dev_link_is_up(net_dev)) {
         if (net_dev_tx_is_allow(net_dev)) {
-            ret = f(net_buff, net_dev);
+            err = NETDEV_TX_OK;
 
-            if (ret == NETDEV_TX_OK)
-                return ret;
+            while (net_buff) {
+                struct net_buff_s *next = net_buff->next;
+
+                net_buff->next = NULL;
+
+                err = netdev_start_tx(net_buff, net_dev);
+
+                if (!net_dev_xmit_complete(err)) {
+                    net_buff->next = next;
+                    break;
+                }
+
+                net_buff = next;
+
+                if (!net_dev_tx_is_allow(net_dev) && net_buff) {
+                    err = NETDEV_TX_BUSY;
+                    break;
+                }
+            }
+            if (net_dev_xmit_complete(err))
+                return err;
         }
     }
 
-    free_net_buff(net_buff);
-    
-    return ret;
+    err = -1;   // ENETDOWN
+    free_net_buff_list(net_buff);
+
+    return err;
 }
 
 /*!

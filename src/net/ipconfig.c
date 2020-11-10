@@ -359,7 +359,7 @@ static void dhcp_send_request(void) {
         printf_P(PSTR("Error: IP config: device header create error\n"));
         return;
     }
-    if (netdev_start_tx(net_buff)) {
+    if (netdev_queue_xmit(net_buff) < 0) {
         printf_P(PSTR("Error: IP config: transfer failed\n"));
     }
 }
@@ -378,7 +378,7 @@ static int8_t dhcp(void) {
     printf_P(PSTR("Sending DHCP request..."));
 
     /* 6 attempt with timeout ~4 sec */
-    while (1) {
+    while (true) {
         dhcp_send_request();
 
         t_out = F_CPU / 4;
@@ -462,6 +462,7 @@ int8_t ip_auto_config(void) {
             err = -1;
             return err;
         }
+        err = 0;
     }
 
     printf_P(PSTR("IP config: Success\n"));

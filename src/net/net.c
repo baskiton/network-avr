@@ -93,6 +93,18 @@ void free_net_buff(struct net_buff_s *net_buff) {
 }
 
 /*!
+ * @brief Free list of buffer
+ */
+void free_net_buff_list(struct net_buff_s *net_buff) {
+    while (net_buff) {
+        struct net_buff_s *next = net_buff->next;
+
+        free_net_buff(net_buff);
+        net_buff = next;
+    }
+}
+
+/*!
  * @brief Initialize the net working
  */
 void network_init(void) {
