@@ -148,35 +148,30 @@ static inline int8_t netdev_start_tx(struct net_buff_s *net_buff,
  */
 int8_t netdev_queue_xmit(struct net_buff_s *net_buff) {
     struct net_dev_s *net_dev = net_buff->net_dev;
-    int8_t err;
+    int8_t err = NETDEV_TX_BUSY;
 
-    if (net_dev_upstate_is_run(net_dev) && net_dev_link_is_up(net_dev)) {
-        if (net_dev_tx_is_allow(net_dev)) {
-            err = NETDEV_TX_OK;
+    while (net_dev_upstate_is_run(net_dev) &&
+           net_dev_link_is_up(net_dev) &&
+           net_buff) {
+        if (!net_dev_tx_is_allow(net_dev))
+            continue;
 
-            while (net_buff) {
-                struct net_buff_s *next = net_buff->next;
+        struct net_buff_s *next = net_buff->next;
 
-                net_buff->next = NULL;
+        net_buff->next = NULL;
 
-                err = netdev_start_tx(net_buff, net_dev);
+        err = netdev_start_tx(net_buff, net_dev);
 
-                if (!net_dev_xmit_complete(err)) {
-                    net_buff->next = next;
-                    break;
-                }
-
-                net_buff = next;
-
-                if (!net_dev_tx_is_allow(net_dev) && net_buff) {
-                    err = NETDEV_TX_BUSY;
-                    break;
-                }
-            }
-            if (net_dev_xmit_complete(err))
-                return err;
+        if (!net_dev_xmit_complete(err)) {
+            net_buff->next = next;
+            continue;
         }
+
+        net_buff = next;
     }
+
+    if (net_dev_xmit_complete(err))
+        return err;
 
     err = -1;   // ENETDOWN
     free_net_buff_list(net_buff);

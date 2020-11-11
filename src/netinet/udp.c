@@ -27,6 +27,8 @@ ssize_t udp_send_msg(struct socket *restrict sk,
         return -1;
 
     /** TODO: */
+    (void)ulen;
+    (void)nb;
 
     return len;
 }
