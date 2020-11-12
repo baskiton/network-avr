@@ -180,16 +180,14 @@ inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
                                 int16_t type,
                                 const void *d_addr, const void *s_addr,
                                 int16_t len) {
-    typedef int8_t (*func_t)(struct net_buff_s *, struct net_dev_s *,
-                             int16_t, const void *, const void *,
-                             int16_t );
-    func_t f;
+    int8_t (*create_f)(struct net_buff_s *, struct net_dev_s *,
+                       int16_t, const void *, const void *, int16_t);
 
     if (!net_dev->header_ops ||
-        !(f = pgm_read_ptr(&net_dev->header_ops->create)))
+        !(create_f = pgm_read_ptr(&net_dev->header_ops->create)))
         return -1;
 
-    return f(net_buff, net_dev, type, d_addr, s_addr, len);
+    return create_f(net_buff, net_dev, type, d_addr, s_addr, len);
 }
 
 /*!
@@ -200,13 +198,13 @@ inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
  * @return 0 if success
  */
 inline int8_t netdev_set_settings(struct net_dev_s *net_dev, bool full_duplex) {
-    typedef int8_t (*func_t)(struct net_dev_s *, bool);
-    func_t f = pgm_read_ptr(&net_dev->netdev_ops->set_dev_settings);
+    int8_t (*set_dev_settings_f)(struct net_dev_s *, bool);
+    set_dev_settings_f = pgm_read_ptr(&net_dev->netdev_ops->set_dev_settings);
 
-    if (!f)
+    if (!set_dev_settings_f)
         return -1;  // EOPNOTSUPP
 
-    return f(net_dev, full_duplex);
+    return set_dev_settings_f(net_dev, full_duplex);
 }
 
 struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *));

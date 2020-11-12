@@ -46,12 +46,12 @@ void net_dev_free(struct net_dev_s *net_dev) {
  * @return 0 if success; errno if error
  */
 int8_t netdev_register(struct net_dev_s *net_dev) {
-    typedef int8_t (*func_t)(struct net_dev_s *);
-    func_t f = pgm_read_ptr(&net_dev->netdev_ops->init);
+    int8_t (*init_f)(struct net_dev_s *);
+    init_f = pgm_read_ptr(&net_dev->netdev_ops->init);
     int8_t err = 0;
 
-    if (f) {
-        err = f(net_dev);
+    if (init_f) {
+        err = init_f(net_dev);
         if (err)
             return err;
     }
@@ -66,11 +66,11 @@ int8_t netdev_register(struct net_dev_s *net_dev) {
  * @param net_dev Device to unregister
  */
 void netdev_unregister(struct net_dev_s *net_dev) {
-    typedef void (*func_t)(struct net_dev_s *);
-    func_t f = pgm_read_ptr(&net_dev->netdev_ops->stop);
+    void (*stop_f)(struct net_dev_s *);
+    stop_f = pgm_read_ptr(&net_dev->netdev_ops->stop);
 
-    if (f)
-        f(net_dev);
+    if (stop_f)
+        stop_f(net_dev);
 
     curr_net_dev = NULL;
 }
@@ -79,33 +79,31 @@ void netdev_unregister(struct net_dev_s *net_dev) {
  *
  */
 void netdev_set_rx_mode(struct net_dev_s *net_dev) {
-    typedef void (*func_t)(struct net_dev_s *);
-    func_t f;
+    void (*set_rx_mode_f)(struct net_dev_s *);
 
     if (!net_dev_upstate_is_run(net_dev))
         return;
 
-    f = pgm_read_ptr(&net_dev->netdev_ops->set_rx_mode);
-    
-    if (f)
-        f(net_dev);
+    set_rx_mode_f = pgm_read_ptr(&net_dev->netdev_ops->set_rx_mode);
+
+    if (set_rx_mode_f)
+        set_rx_mode_f(net_dev);
 }
 
 /*!
  *
  */
 int8_t netdev_open(struct net_dev_s *net_dev) {
-    typedef int8_t (*func_t)(struct net_dev_s *);
-    func_t f;
+    int8_t (*open_f)(struct net_dev_s *);
     int8_t err = 0;
 
     if (net_dev_upstate_is_run(net_dev))
         return 0;
 
-    f = pgm_read_ptr(&net_dev->netdev_ops->open);
+    open_f = pgm_read_ptr(&net_dev->netdev_ops->open);
 
-    if (f)
-        err = f(net_dev);
+    if (open_f)
+        err = open_f(net_dev);
 
     if (!err) {
         net_dev_set_upstate_run(net_dev);
@@ -119,24 +117,23 @@ int8_t netdev_open(struct net_dev_s *net_dev) {
  *
  */
 void netdev_close(struct net_dev_s *net_dev) {
-    typedef void (*func_t)(struct net_dev_s *);
-    func_t f;
+    void (*stop_f)(struct net_dev_s *);
 
     if (!net_dev_upstate_is_run(net_dev))
         return;
 
-    f = pgm_read_ptr(&net_dev->netdev_ops->stop);
+    stop_f = pgm_read_ptr(&net_dev->netdev_ops->stop);
 
-    if (f)
-        f(net_dev);
+    if (stop_f)
+        stop_f(net_dev);
 
     net_dev_set_upstate_stop(net_dev);
 }
 
 static inline int8_t netdev_start_tx(struct net_buff_s *net_buff,
                                      struct net_dev_s *net_dev) {
-    typedef int8_t (*func_t)(struct net_buff_s *, struct net_dev_s *);
-    func_t start_tx_f = pgm_read_ptr(&net_dev->netdev_ops->start_tx);
+    int8_t (*start_tx_f)(struct net_buff_s *, struct net_dev_s *);
+    start_tx_f = pgm_read_ptr(&net_dev->netdev_ops->start_tx);
 
     return start_tx_f(net_buff, net_dev);   // start_tx()
 }
@@ -186,16 +183,16 @@ int8_t netdev_queue_xmit(struct net_buff_s *net_buff) {
  * @return 0 if success
  */
 int8_t netdev_set_mac_addr(struct net_dev_s *net_dev, const void *addr) {
-    typedef int8_t (*func_t)(struct net_dev_s *, const void *);
-    func_t f = pgm_read_ptr(&net_dev->netdev_ops->set_mac_addr);
+    int8_t (*set_mac_addr_f)(struct net_dev_s *, const void *);
+    set_mac_addr_f = pgm_read_ptr(&net_dev->netdev_ops->set_mac_addr);
 
     if (!addr)
         // EINVAL
         return -1;
 
-    if (!f)
+    if (!set_mac_addr_f)
         // EOPNOTSUPP
         return -1;
 
-    return f(net_dev, addr);
+    return set_mac_addr_f(net_dev, addr);
 }

@@ -80,10 +80,7 @@ int8_t bind(struct socket *sk,
             const struct sockaddr *addr,
             socklen_t addr_len) {
     int8_t err = -1;
-    typedef int8_t (*bind_t)(struct socket *,
-                             const struct sockaddr *,
-                             uint8_t);
-    bind_t bind_f;
+    int8_t (*bind_f)(struct socket *, const struct sockaddr *, uint8_t);
 
     if (sk) {
         bind_f = pgm_read_ptr(&sk->p_ops->bind);
@@ -193,6 +190,7 @@ ssize_t sendto(struct socket *sk,
                uint8_t flags,
                const struct sockaddr *addr,
                socklen_t addr_len) {
+    ssize_t (*snd_msg_f)(struct socket *, struct msghdr *);
     ssize_t ret;
     struct msghdr msg;
     struct iovec iov;
@@ -213,8 +211,8 @@ ssize_t sendto(struct socket *sk,
         msg.msg_name = (void *)addr;
         msg.msg_namelen = addr_len;
     }
-    typedef ssize_t (*snd_msg_t)(struct socket *, struct msghdr *);
-    snd_msg_t snd_msg_f = pgm_read_ptr(&sk->p_ops->sendmsg);
+
+    snd_msg_f = pgm_read_ptr(&sk->p_ops->sendmsg);
     ret = snd_msg_f(sk, &msg);  // sendmsg()
 
     return ret;
@@ -246,8 +244,8 @@ ssize_t sendmsg(struct socket *sk,
 
     /** TODO: */
 
-    typedef ssize_t (*snd_msg_t)(struct socket *, struct msghdr *);
-    snd_msg_t snd_msg_f = pgm_read_ptr(&sk->p_ops->sendmsg);
+    ssize_t (*snd_msg_f)(struct socket *, struct msghdr *);
+    snd_msg_f = pgm_read_ptr(&sk->p_ops->sendmsg);
     ret = snd_msg_f(sk, (void *)message);  // sendmsg()
 
     return ret;
@@ -343,8 +341,7 @@ out:
  *
  */
 void sock_close(struct socket **sk) {
-    typedef int8_t (*rls_t)(struct socket *);
-    rls_t release_f;
+    int8_t (*release_f)(struct socket *);
 
     if ((*sk)->p_ops) {
         release_f = pgm_read_ptr(&(*sk)->p_ops->release);

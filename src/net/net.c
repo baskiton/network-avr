@@ -37,7 +37,7 @@ struct net_buff_s *net_buff_alloc(uint16_t size) {
     }
 
     memset(buff, 0, ((void *)&buff->head - (void *)buff));
-    
+
     buff->head = buff->data = buff->tail = head;
     buff->end = buff->tail + size;
     buff->mac_hdr_offset = buff->data - buff->head;

@@ -23,12 +23,11 @@ ISR(INT0_vect) {
 }
  */
 inline void net_dev_irq_handler(void) {
-    typedef void (*func_t)(struct net_dev_s *);
-    func_t f;
+    void (*irq_hdlr_f)(struct net_dev_s *);
 
     if (nd_irq_hdlr.net_dev) {
-        f = pgm_read_ptr(&nd_irq_hdlr.net_dev->netdev_ops->irq_handler);
-        f(nd_irq_hdlr.net_dev);
+        irq_hdlr_f = pgm_read_ptr(&nd_irq_hdlr.net_dev->netdev_ops->irq_handler);
+        irq_hdlr_f(nd_irq_hdlr.net_dev);
     }
 }
 
