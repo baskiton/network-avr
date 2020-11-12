@@ -10,6 +10,17 @@
 #include "net/net.h"
 #include "net/nb_queue.h"
 
+static uint16_t inet_port = 49152;
+
+uint16_t inet_get_port(void) {
+    uint16_t port = inet_port++;
+
+    if (!inet_port)
+        inet_port = 49152;
+
+    return port;
+}
+
 /*!
  *
  */
@@ -92,9 +103,7 @@ out:
 static ssize_t inet_sendmsg(struct socket *restrict sk,
                             struct msghdr *restrict msg) {
     if (!sk->src_port)
-        // src port cannot be zero
-        /** TODO: get port number automaticly */
-        return -1;
+        sk->src_port = inet_get_port();
 
     switch (sk->protocol) {
         case IPPROTO_TCP:

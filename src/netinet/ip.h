@@ -87,6 +87,10 @@ inline bool ip4_is_zero(const void *ip) {
 
 struct ip_hdr_s *get_ip_hdr(struct net_buff_s *net_buff);
 void ip_init(void);
+struct net_buff_s *ip_create_nb(struct socket *sk,
+                                struct msghdr *msg,
+                                uint8_t t_hdr_len,
+                                ssize_t len);
 
 int8_t ip_proto_handler(uint8_t proto, struct net_buff_s *net_buff);
 void ip_proto_handler_add(uint8_t proto, proto_hdlr_t handler);
