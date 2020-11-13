@@ -4,6 +4,10 @@
 #include "netinet/ip.h"
 #include "netinet/udp.h"
 
+#include <stdio.h>
+#include <avr/pgmspace.h>
+
+
 /*!
  * @brief Get the UDP header
  * @param net_buff Pointer to network buffer
@@ -30,17 +34,14 @@ static int8_t udp_send(struct socket *sk) {
     /* UDP header create */
     udph = get_udp_hdr(nb);
 
-
     udph->port_src = sk->src_port;
     udph->port_dst = sk->dst_port;
     udph->len = htons(nb->pkt_len - nb->transport_hdr_offset);
     udph->chks = 0;
 
-    /** TODO: calculate checksum */
+    /** TODO: calculate UDP checksum */
 
-    /** TODO: aaaand transmitting... */
-
-    return 0;
+    return ip_send_sock(sk);
 }
 
 /*!
@@ -52,6 +53,7 @@ ssize_t udp_send_msg(struct socket *restrict sk,
     ssize_t ulen = len;
     struct sockaddr_in *addr_in = msg->msg_name;
     struct net_buff_s *nb;
+    int8_t err;
 
     /* UDP does not support out-of-band data */
     if (msg->msg_flags & MSG_OOB)
@@ -62,22 +64,23 @@ ssize_t udp_send_msg(struct socket *restrict sk,
 
     /* verify address */
     if (addr_in) {
-        if (msg->msg_namelen < sizeof(*addr_in) ||
-            addr_in->sin_port == 0)
+        if ((msg->msg_namelen < sizeof(*addr_in)) ||
+            (addr_in->sin_port == 0))
             // EINVAL
             return -1;
 
-        if (addr_in->sin_family != AF_INET ||
-            addr_in->sin_family != AF_UNSPEC)
+        if ((addr_in->sin_family != AF_INET) &&
+            (addr_in->sin_family != AF_UNSPEC)) {
             // EAFNOSUPPORT
             return -1;
+        }
 
         sk->dst_addr = addr_in->sin_addr.s_addr;
         sk->dst_port = addr_in->sin_port;
-    } else {
-        /* the socket is assumed to have already been established,
-         * so the existing values are used.
-         */
+    /* } else {
+     * the socket is assumed to have already been established,
+     * so the existing values are used.
+     */
     }
 
     nb = ip_create_nb(sk, msg, sizeof(struct udp_hdr_s), ulen);
@@ -85,7 +88,13 @@ ssize_t udp_send_msg(struct socket *restrict sk,
         // error
         return -1;
 
-    udp_send(sk);
+    err = udp_send(sk);
+
+    if (err) {
+        if (err > 0)
+            err = -err;
+        return err;
+    }
 
     return len;
 }

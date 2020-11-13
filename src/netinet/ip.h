@@ -91,6 +91,7 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
                                 struct msghdr *msg,
                                 uint8_t t_hdr_len,
                                 ssize_t len);
+int8_t ip_send_sock(struct socket *sk);
 
 int8_t ip_proto_handler(uint8_t proto, struct net_buff_s *net_buff);
 void ip_proto_handler_add(uint8_t proto, proto_hdlr_t handler);

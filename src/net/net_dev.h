@@ -11,6 +11,7 @@
 
 #include "net/ether.h"
 #include "net/net.h"
+#include "net/nb_queue.h"
 
 extern struct net_dev_s *curr_net_dev;
 
@@ -215,6 +216,7 @@ int8_t netdev_open(struct net_dev_s *net_dev);
 void netdev_close(struct net_dev_s *net_dev);
 void netdev_set_rx_mode(struct net_dev_s *net_dev);
 int8_t netdev_set_mac_addr(struct net_dev_s *net_dev, const void *addr);
-int8_t netdev_queue_xmit(struct net_buff_s *net_buff);
+int8_t netdev_list_xmit(struct net_buff_s *net_buff);
+int8_t netdev_queue_xmit(struct nb_queue_s *queue);
 
 #endif  /* !NET_NET_DEV_H */

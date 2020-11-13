@@ -65,7 +65,7 @@ out:
 }
 
 /*!
- *
+ * @brief Initialize Internet Protocols
  */
 void ip_init(void) {
     icmp_init();
@@ -92,7 +92,7 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
     uint8_t *data;
     uint16_t pkt_len;
 
-    pkt_len = len + sizeof(struct ip_hdr_s) + sizeof(struct eth_header_s);
+    pkt_len = len + sizeof(*iph) + sizeof(struct eth_header_s);
 
     /**
      * TODO: when there are several devices (including virtual ones),
@@ -111,15 +111,27 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
 
     nb->protocol = ETH_P_IP;
     nb->tail += ETH_HDR_LEN;
-    nb->transport_hdr_offset = nb->network_hdr_offset + sizeof(struct ip_hdr_s);
+    nb->transport_hdr_offset = nb->network_hdr_offset + sizeof(*iph);
 
     if (netdev_hdr_create(nb, ndev, ETH_P_IP, ndev->broadcast,
                           ndev->dev_addr, pkt_len))
         goto error;
 
-    iph = put_net_buff(nb, sizeof(struct ip_hdr_s));
-    /** TODO: fill in the IP header. */
-    (void)iph;
+    /* build IP header */
+    iph = put_net_buff(nb, sizeof(*iph));
+
+    iph->version = 4;
+    iph->ihl = 5;
+    iph->tos = 0;
+    iph->tot_len = htons(len + sizeof(*iph));
+    iph->id = 0;
+    iph->frag_off = htons(IP_DF);
+    iph->ttl = 64;
+    iph->protocol = sk->protocol;
+    iph->ip_src = sk->src_addr;
+    iph->ip_dst = sk->dst_addr;
+    iph->hdr_chks = 0;
+    iph->hdr_chks = in_checksum(iph, iph->ihl * 4);
 
     data = put_net_buff(nb, len);   // data is transport_header_offset
 
@@ -139,4 +151,12 @@ error:
     free_net_buff(nb);
     nb = NULL;
     goto out;
+}
+
+/*!
+ * @brief Sending queue over IP
+ * @param sk Socket with queue
+ */
+int8_t ip_send_sock(struct socket *sk) {
+    return netdev_queue_xmit(&sk->nb_tx_q);
 }

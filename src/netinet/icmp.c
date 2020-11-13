@@ -69,7 +69,7 @@ static bool icmp_echo(struct net_buff_s *nb) {
     icmp_h->chks = 0;
     icmp_h->chks = in_checksum(icmp_h, (ntohs(iph->tot_len) - iph->ihl * 4));
 
-    netdev_queue_xmit(nb);
+    netdev_list_xmit(nb);
 
     return true;
 }

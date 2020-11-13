@@ -12,17 +12,21 @@
 
 static uint16_t inet_port = 49152;
 
+/*!
+ * @brief Get free port number. Starting from 49152
+ * @return Port number in network byte order
+ */
 uint16_t inet_get_port(void) {
     uint16_t port = inet_port++;
 
     if (!inet_port)
         inet_port = 49152;
 
-    return port;
+    return htons(port);
 }
 
 /*!
- *
+ * TODO:
  */
 static int8_t inet_release(struct socket *sk) {
     switch (sk->protocol) {
@@ -47,7 +51,7 @@ static int8_t inet_release(struct socket *sk) {
 }
 
 /*!
- *
+ * TODO:
  */
 static int8_t inet_shutdown(struct socket *sk, uint8_t how) {
     if (how > 2)
@@ -62,7 +66,7 @@ static int8_t inet_shutdown(struct socket *sk, uint8_t how) {
 }
 
 /*!
- *
+ * TODO:
  */
 static int8_t inet_bind(struct socket *sk,
                         const struct sockaddr *addr,
@@ -98,7 +102,9 @@ out:
 }
 
 /*!
- *
+ * @brief Sending message over Internet Protocol
+ * @param sk Socket
+ * @param msg Message structure
  */
 static ssize_t inet_sendmsg(struct socket *restrict sk,
                             struct msghdr *restrict msg) {

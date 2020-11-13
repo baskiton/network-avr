@@ -46,7 +46,7 @@ static struct arp_hdr_s *get_arp_hdr(struct net_buff_s *net_buff) {
 }
 
 static inline int8_t arp_xmit(struct net_buff_s *net_buff) {
-    return netdev_queue_xmit(net_buff);
+    return netdev_list_xmit(net_buff);
 }
 
 /*!

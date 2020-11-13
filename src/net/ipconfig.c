@@ -359,7 +359,7 @@ static void dhcp_send_request(void) {
         printf_P(PSTR("Error: IP config: device header create error\n"));
         return;
     }
-    if (netdev_queue_xmit(net_buff) < 0) {
+    if (netdev_list_xmit(net_buff) < 0) {
         printf_P(PSTR("Error: IP config: transfer failed\n"));
     }
 }

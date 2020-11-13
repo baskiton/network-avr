@@ -8,6 +8,7 @@
 
 #include "net/net.h"
 #include "net/net_dev.h"
+#include "net/nb_queue.h"
 
 struct net_dev_s *curr_net_dev = NULL;  // global current network device
 
@@ -139,11 +140,11 @@ static inline int8_t netdev_start_tx(struct net_buff_s *net_buff,
 }
 
 /*!
- * @brief Start transmit a queue of buffers
+ * @brief Start transmit a list of buffers
  * @param net_buff buffer to transmit
  * @return 0 on success
  */
-int8_t netdev_queue_xmit(struct net_buff_s *net_buff) {
+int8_t netdev_list_xmit(struct net_buff_s *net_buff) {
     struct net_dev_s *net_dev = net_buff->net_dev;
     int8_t err = NETDEV_TX_BUSY;
 
@@ -172,6 +173,40 @@ int8_t netdev_queue_xmit(struct net_buff_s *net_buff) {
 
     err = -1;   // ENETDOWN
     free_net_buff_list(net_buff);
+
+    return err;
+}
+
+/*!
+ * @brief Start transmit a queue of buffers
+ * @param queue Queue to transmit
+ * @return 0 on success
+ */
+int8_t netdev_queue_xmit(struct nb_queue_s *queue) {
+    struct net_buff_s *nb;
+    int8_t err = NETDEV_TX_OK;
+
+    while ((nb = nb_dequeue(queue))) {
+        struct net_dev_s *ndev = nb->net_dev;
+        err = -1;   // ENETDOWN
+
+        while (net_dev_upstate_is_run(ndev) &&
+               net_dev_link_is_up(ndev)) {
+            if (!net_dev_tx_is_allow(ndev))
+                continue;
+
+            err = netdev_start_tx(nb, ndev);
+
+            if (net_dev_xmit_complete(err))
+                break;
+        }
+
+        if (!net_dev_xmit_complete(err)) {
+            nb_queue_clear(queue);
+            err = -1;   // ENETDOWN
+            break;
+        }
+    }
 
     return err;
 }
