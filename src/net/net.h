@@ -1,28 +1,18 @@
-#ifndef NET_H
-#define NET_H
+#ifndef NET_NET_H
+#define NET_NET_H
+
+#include <avr/pgmspace.h>
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include <defines.h>
 
-#include "ether.h"
-#include "net_dev.h"
-#include "socket.h"
-
-#define IP_PROTO_IP         0   // Dummy protocol for TCP
-#define IP_PROTO_ICMP       1   // Internet Control Message Protocol
-#define IP_PROTO_TCP        6   // Transmission Control Protocol
-#define IP_PROTO_UDP        17  // User Datagram Protocol
-#define IP_PROTO_IPV6       41  // IPv6-in-IPv4 tunnelling
-#define IP_PROTO_UDPLITE    136 // UDP-Lite (RFC 3828)
-#define IP_PROTO_ETHERNET   143 // Ethernet-within-IPv6 Encapsulation
-
-#define ETH_HDR_ALIGN 2
-
-#define IN_ADDR_ANY ((uint32_t)0x00000000)          // 0.0.0.0
-#define IN_ADDR_BROADCAST ((uint32_t)0xFFFFFFFF)    // 255.255.255.255
-#define IN_ADDR_NONE ((uint32_t)0xFFFFFFFF)         // 255.255.255.255
-#define IN_ADDR_LOOPBACK ((uint32_t)0x7F000001)     // 127.0.0.1
+#include "net/ether.h"
+#include "net/net_dev.h"
+#include "net/socket.h"
+#include "netinet/in.h"
+#include "net/nb_queue.h"
 
 #define IN_CLASS_A 0
 #define IN_CLASS_A_MASK 0xFF000000  // 255.0.0.0
@@ -48,26 +38,39 @@
 /* Hardware Types */
 #define HWT_ETHER 1
 
-#define htons(x) bswap_16(x)
-#define htonl(x) bswap_32(x)
-#define htonll(x) bswap_64(x)
-#define ntohs(x) bswap_16(x)
-#define ntohl(x) bswap_32(x)
-#define ntohll(x) bswap_64(x)
-
-struct soket;
-struct sock_addr;
+struct socket;
+struct sockaddr;
+struct msghdr;
 
 /**
  * @brief
  * @param bind
  */
 struct protocol_ops {
-    int8_t (*bind)(struct soket *sk, const struct sock_addr *addr);
+    int8_t (*release)(struct socket *sk);
+    int8_t (*shutdown)(struct socket *sk, uint8_t how);
+    struct socket *(*accept)(struct socket *restrict sk,
+                             struct socket *restrict new_sk);
+    int8_t (*bind)(struct socket *sk,
+                   const struct sockaddr *addr,
+                   uint8_t addr_len);
+    int8_t (*connect)(struct socket *sk,
+                      const struct sockaddr *addr,
+                      uint8_t addr_len);
+    int8_t (*listen)(struct socket *sk, uint8_t backlog);
+    ssize_t (*sendmsg)(struct socket *restrict sk,
+                       struct msghdr *restrict msg);
+    ssize_t (*recvmsg)(struct socket *restrict sk,
+                       struct msghdr *restrict msg,
+                       size_t len, uint8_t flags);
 };
 
 /**
  * @brief
+ * 
+ * @param next Next buffer in queue
+ * @param prev Previos buffer in queue
+ * 
  * @param net_dev Network device
  * @param sock Socket for this packet
  * 
@@ -88,6 +91,9 @@ struct protocol_ops {
  * @param end End pointer
  */
 struct net_buff_s {
+    struct net_buff_s *next,
+                      *prev;
+
     struct net_dev_s *net_dev;
     struct socket *sock;
 
@@ -116,10 +122,96 @@ struct net_buff_s *net_buff_alloc(uint16_t size);
 struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size);
 void *put_net_buff(struct net_buff_s *net_buff, uint16_t len);
 void free_net_buff(struct net_buff_s *net_buff);
+void free_net_buff_list(struct net_buff_s *net_buff);
 
-int8_t net_class_determine(const void *ip, uint32_t *netmask);
-uint32_t ip_addr_parse(const char *ip_str);
+void network_init(void);
 
-void inet_init(void);
+/*!
+ * @brief Peek an Network buffer
+ * @param q Queue to pick at
+ * @return Net buffer of NULL if queue is empty
+ */
+static inline struct net_buff_s *nb_peek(struct nb_queue_s *q) {
+    struct net_buff_s *nb = q->next;
 
-#endif  /* !NET_H */
+    if (nb == (struct net_buff_s *)q)
+        return NULL;
+    return nb;
+}
+
+/*!
+ * @brief Network Buffer queue initialize
+ * @param q Queue
+ */
+static inline void nb_queue_init(struct nb_queue_s *q) {
+    q->next = q->prev = (struct net_buff_s *)q;
+    q->q_len = 0;
+}
+
+/*!
+ * @brief Enqueue the buffer at the end of a queue
+ * @param new Buffer to enqueue
+ * @param q Queue to use
+ */
+static inline void nb_enqueue(struct net_buff_s *new, struct nb_queue_s *q) {
+    struct net_buff_s *next, *prev;
+
+    next = (struct net_buff_s *)q;
+    prev = next->prev;
+
+    new->next = next;
+    new->prev = prev;
+    next->prev = prev->next = new;
+    q->q_len++;
+}
+
+/*!
+ * @brief Dequeue from queue and return result
+ * @param q Queue to dequeue
+ * @return Dequeue buffer
+ */
+static inline struct net_buff_s *nb_dequeue(struct nb_queue_s *q) {
+    struct net_buff_s *next, *prev, *ret;
+
+    ret = nb_peek(q);
+    if (ret) {
+        q->q_len--;
+        next = ret->next;
+        prev = ret->prev;
+        ret->prev = ret->next = NULL;
+        next->prev = prev;
+        prev->next = next;
+    }
+    return ret;
+}
+
+/*!
+ * @brief Clear queue
+ * @param q Queue to clear
+ */
+static inline void nb_queue_clear(struct nb_queue_s *q) {
+    struct net_buff_s *nb;
+
+    while ((nb = nb_dequeue(q)) != NULL)
+        free_net_buff(nb);
+}
+
+/*!
+ * @brief Dump the queue by printing the addresses of its elements.
+ * @param q Queue to dump
+ */
+static inline void nb_queue_dump(struct nb_queue_s *q) {
+    struct net_buff_s *entry = q->next;
+
+    putchar('[');
+
+    while (entry != (struct net_buff_s *)q) {
+        printf_P(PSTR("%p, "), entry);
+        entry = entry->next;
+    }
+
+    putchar(']');
+    putchar('\n');
+}
+
+#endif  /* !NET_NET_H */

@@ -4,10 +4,11 @@
 #include "net/net.h"
 #include "net/net_dev.h"
 #include "net/ether.h"
-#include "net/arp.h"
-#include "net/ip.h"
 #include "net/pkt_handler.h"
 #include "net/ipconfig.h"
+#include "arpa/inet.h"
+#include "netinet/arp.h"
+#include "netinet/ip.h"
 
 struct arp_tbl_entry_s arp_tbl;
 
@@ -16,7 +17,7 @@ struct arp_tbl_entry_s arp_tbl;
  * @param ip IP address to set
  * @param mac MAC address to set
  */
-void arp_tbl_set(uint8_t *ip, uint8_t *mac) {
+void arp_tbl_set(uint8_t *restrict ip, uint8_t *restrict mac) {
     if (memcmp(&arp_tbl.ip, ip, IP4_LEN))
         memcpy(&arp_tbl.ip, ip, IP4_LEN);
 
@@ -44,6 +45,10 @@ static struct arp_hdr_s *get_arp_hdr(struct net_buff_s *net_buff) {
     return (void *)(net_buff->head + net_buff->network_hdr_offset);
 }
 
+static inline int8_t arp_xmit(struct net_buff_s *net_buff) {
+    return netdev_list_xmit(net_buff);
+}
+
 /*!
  * @brief Process an ARP packet
  * @param net_buff Pointer to network buffer
@@ -65,7 +70,7 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
         goto free_buf;
 
     /* Check for multicast and loopback target IP */
-    if ((net_class_determine(arph->tpa, NULL) == IN_CLASS_D) ||
+    if ((inet_class_determine(arph->tpa, NULL) == IN_CLASS_D) ||
         ((arph->tpa[0] & 0xF0) == 0x7F))
         goto free_buf;
 
@@ -79,8 +84,9 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
 
     /* Send reply if it is a REQUEST for us */
     if (arph->oper == htons(ARP_OP_REQ)) {
-        /* so far, the same net buffer is used that we received,
-            just overwrite the required fields. */
+        /** TODO: so far, the same net buffer is used that
+         * we received, just overwrite the required fields.
+         */
         net_buff->pkt_len -= 4;
         ndev = net_buff->net_dev;
         eth_hdr = (void *)(net_buff->head + net_buff->mac_hdr_offset);
@@ -99,7 +105,7 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
         memcpy(eth_hdr->mac_src, ndev->dev_addr, ETH_MAC_LEN);
 
         /* and finally, begin transmission... */
-        netdev_start_tx(net_buff);
+        arp_xmit(net_buff);
 
         ret = NETDEV_RX_SUCCESS;
         goto out;
@@ -153,7 +159,7 @@ void arp_init(void) {
  * @brief Create the ARP packet
  * @param net_dev Network device
  * @param oper Operation Type (reply or request)
- * @param ptype Protocol Type (for ARP header, e.g. IPv4)
+ * @param ptype Protocol Type (for ARP header, e.g. ETH_P_IP)
  * @param dest_hw Destination MAC (for Link layer header (ethernet)).
  *                  If \a NULL, it set as broadcast.
  * @param sha Source MAC (migth be \a NULL)
@@ -184,9 +190,7 @@ struct net_buff_s *arp_create(struct net_dev_s *net_dev,
         spa = (void *)&my_ip;
 
     net_buff->protocol = htons(ETH_P_ARP);
-    net_buff->data += ETH_HDR_LEN;
     net_buff->tail += ETH_HDR_LEN;
-    net_buff->network_hdr_offset = net_buff->data - net_buff->head;
     if (netdev_hdr_create(net_buff, net_dev, ETH_P_ARP,
                           dest_hw, sha, net_buff->pkt_len))
         goto out;
@@ -224,16 +228,18 @@ out:
  * @param tha Target MAC (migth be \a NULL)
  * @param tpa Target IP
  */
-void arp_send(struct net_dev_s *net_dev,
-              uint16_t oper, uint16_t ptype,
-              const uint8_t *dest_hw,
-              const uint8_t *sha, const uint8_t *spa,
-              const uint8_t *tha, const uint8_t *tpa) {
+int8_t arp_send(struct net_dev_s *net_dev,
+                 uint16_t oper, uint16_t ptype,
+                 const uint8_t *dest_hw,
+                 const uint8_t *sha, const uint8_t *spa,
+                 const uint8_t *tha, const uint8_t *tpa) {
     struct net_buff_s *nb;
 
     nb = arp_create(net_dev, oper, ptype, dest_hw, sha, spa, tha, tpa);
-    if (!nb)
-        return;
+    if (!nb) {
+        printf_P(PSTR("arp_send(): failed to creating buffer\n"));
+        return -1;
+    }
 
-    netdev_start_tx(nb);
+    return arp_xmit(nb);
 }

@@ -1,5 +1,7 @@
-#ifndef NET_DEV_H
-#define NET_DEV_H
+#ifndef NET_NET_DEV_H
+#define NET_NET_DEV_H
+
+#include <avr/pgmspace.h>
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -7,22 +9,28 @@
 
 #include <defines.h>
 
-#include "ether.h"
-#include "net.h"
+#include "net/ether.h"
+#include "net/net.h"
+#include "net/nb_queue.h"
 
 extern struct net_dev_s *curr_net_dev;
 
 #define NETDEV_RX_SUCCESS 0
 #define NETDEV_RX_DROP 1
 
-#define NETDEV_TX_OK 0
-#define NETDEV_TX_BUSY (uint8_t)~0U
+#define NET_XMIT_SUCCESS 0x00
+#define NET_XMIT_DROP    0x01
+#define NET_XMIT_MASK    0x0F
 
-#define RX_RT_BROADCAST (1 << 0)   // receive broadcast & unicast frames filtering (by default)
-#define RX_RT_MULTICAST (1 << 1)   // receive multicast & unicast frames filtering
-#define RX_RT_UNICAST   (1 << 2)   // receive unicast frames filtering
-#define RX_RT_ALLMULTI  (1 << 3)   // receive broadcast & multicast & unicast frames filtering
-#define RX_RT_PROMISC   (1 << 4)// receive all frames promiscuously
+#define NETDEV_TX_OK        0x00
+#define NETDEV_TX_BUSY      0x10
+#define NETDEV_TX_MASK      0xF0
+
+#define RX_RT_BROADCAST (1 << 0)    // receive broadcast & unicast frames filtering (by default)
+#define RX_RT_MULTICAST (1 << 1)    // receive multicast & unicast frames filtering
+#define RX_RT_UNICAST   (1 << 2)    // receive unicast frames filtering
+#define RX_RT_ALLMULTI  (1 << 3)    // receive broadcast & multicast & unicast frames filtering
+#define RX_RT_PROMISC   (1 << 4)    // receive all frames promiscuously
 
 struct net_dev_s;
 struct net_buff_s;
@@ -60,7 +68,9 @@ struct header_ops_s {
  * @param flags State flags
  * @param netdev_ops Callbacks for control functions
  * @param header_ops Callbacks for eth header functions
+ * @param mtu MTU (maximum transfer unit)
  * @param dev_addr Hardware address (MAC)
+ * @param broadcast Hw broadcast Addr (MAC)
  * @param priv pointer to device private data
  */
 typedef struct net_dev_s {
@@ -71,10 +81,11 @@ typedef struct net_dev_s {
         uint8_t rx_mode : 5;        // see ndev_rx_mode enum
         uint8_t tx_allow : 1;       // 1 - tx allow; 0 - stop tx
     } flags;
-    uint8_t broadcast[6];
     const struct net_dev_ops_s *netdev_ops;
     const struct header_ops_s *header_ops;
+    uint16_t mtu;
     uint8_t dev_addr[6];    /** FIXME: ETH_MAC_LEN */
+    uint8_t broadcast[6];
     void *priv;
 } net_dev_t;
 
@@ -94,7 +105,7 @@ inline void net_dev_set_upstate_stop(struct net_dev_s *net_dev) {
 
 /*!
  * @brief Check link status of network device
- * @return True if Link is UP
+ * @return True if device is running
  */
 inline bool net_dev_upstate_is_run(struct net_dev_s *net_dev) {
     return net_dev->flags.up_state;
@@ -145,6 +156,17 @@ inline bool net_dev_tx_is_allow(struct net_dev_s *net_dev) {
 }
 
 /*!
+ * @brief Checking if the transfer is complete.
+ * \c true if:
+ *      - transmission success (val == NETDEV_TX_OK)
+ *      - error while transmitting (val < 0)
+ * @return True if buffer was consumed
+ */
+static inline bool net_dev_xmit_complete(int8_t val) {
+    return (val < NET_XMIT_MASK) ? true : false;
+}
+
+/*!
  * @brief Create Headre for network device
  * @param net_buff Network Buffer
  * @param net_dev Network Device
@@ -159,10 +181,14 @@ inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
                                 int16_t type,
                                 const void *d_addr, const void *s_addr,
                                 int16_t len) {
-    if (!net_dev->header_ops || !net_dev->header_ops->create)
+    int8_t (*create_f)(struct net_buff_s *, struct net_dev_s *,
+                       int16_t, const void *, const void *, int16_t);
+
+    if (!net_dev->header_ops ||
+        !(create_f = pgm_read_ptr(&net_dev->header_ops->create)))
         return -1;
-    
-    return net_dev->header_ops->create(net_buff, net_dev, type, d_addr, s_addr, len);
+
+    return create_f(net_buff, net_dev, type, d_addr, s_addr, len);
 }
 
 /*!
@@ -173,10 +199,13 @@ inline int8_t netdev_hdr_create(struct net_buff_s *net_buff,
  * @return 0 if success
  */
 inline int8_t netdev_set_settings(struct net_dev_s *net_dev, bool full_duplex) {
-    if (!net_dev->netdev_ops->set_dev_settings)
+    int8_t (*set_dev_settings_f)(struct net_dev_s *, bool);
+    set_dev_settings_f = pgm_read_ptr(&net_dev->netdev_ops->set_dev_settings);
+
+    if (!set_dev_settings_f)
         return -1;  // EOPNOTSUPP
 
-    return net_dev->netdev_ops->set_dev_settings(net_dev, full_duplex);
+    return set_dev_settings_f(net_dev, full_duplex);
 }
 
 struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *));
@@ -187,6 +216,7 @@ int8_t netdev_open(struct net_dev_s *net_dev);
 void netdev_close(struct net_dev_s *net_dev);
 void netdev_set_rx_mode(struct net_dev_s *net_dev);
 int8_t netdev_set_mac_addr(struct net_dev_s *net_dev, const void *addr);
-int8_t netdev_start_tx(struct net_buff_s *net_buff);
+int8_t netdev_list_xmit(struct net_buff_s *net_buff);
+int8_t netdev_queue_xmit(struct nb_queue_s *queue);
 
-#endif  /* !NET_DEV_H */
+#endif  /* !NET_NET_DEV_H */

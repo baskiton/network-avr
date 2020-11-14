@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
 
 #include "net/net.h"
 #include "net/net_dev.h"
@@ -22,8 +23,12 @@ ISR(INT0_vect) {
 }
  */
 inline void net_dev_irq_handler(void) {
-    if (nd_irq_hdlr.net_dev)
-        nd_irq_hdlr.net_dev->netdev_ops->irq_handler(nd_irq_hdlr.net_dev);
+    void (*irq_hdlr_f)(struct net_dev_s *);
+
+    if (nd_irq_hdlr.net_dev) {
+        irq_hdlr_f = pgm_read_ptr(&nd_irq_hdlr.net_dev->netdev_ops->irq_handler);
+        irq_hdlr_f(nd_irq_hdlr.net_dev);
+    }
 }
 
 /*!
@@ -34,7 +39,7 @@ inline void net_dev_irq_handler(void) {
 int8_t irq_hdlr_add(struct net_dev_s *net_dev) {
     if (!net_dev ||
         !net_dev->netdev_ops ||
-        !net_dev->netdev_ops->irq_handler)
+        !pgm_read_ptr(&net_dev->netdev_ops->irq_handler))
         return -1;
 
     nd_irq_hdlr.net_dev = net_dev;

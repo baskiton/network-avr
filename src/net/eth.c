@@ -8,6 +8,7 @@
 #include "net/ether.h"
 #include "net/net.h"
 #include "net/net_dev.h"
+#include "arpa/inet.h"
 
 /*!
  * @brief Create the Ethernet Header
@@ -41,8 +42,7 @@ int8_t eth_header_create(struct net_buff_s *net_buff, struct net_dev_s *net_dev,
     return 0;
 }
 
-/** TODO: move this to PROGMEM */
-static const struct header_ops_s eth_header_ops = {
+static const struct header_ops_s eth_header_ops PROGMEM = {
     .create = eth_header_create
 };
 
