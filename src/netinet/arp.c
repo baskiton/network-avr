@@ -1,3 +1,5 @@
+#include <util/delay.h>
+
 #include <stdint.h>
 #include <string.h>
 
@@ -63,15 +65,16 @@ int8_t arp_lookup(const in_addr_t *next_hop,
                      ndev->dev_addr, src_ip, NULL, next_hop);
 
             /* waiting for ARP-reply */
-            for (uint16_t i = 65535; i != 0; i--) {
+            for (uint32_t i = F_CPU / 20; !mac && i; i--) {
                 mac = arp_tbl_get(next_hop);
-                if (mac)
-                    memcpy(mac_dest, mac, ETH_MAC_LEN);
-                    break;
+                _delay_us(0);
             }
+
             if (!mac)
                 // times out
                 return -1;
+
+            memcpy(mac_dest, mac, ETH_MAC_LEN);
         }
     }
 
