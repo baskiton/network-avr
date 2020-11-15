@@ -1,6 +1,8 @@
 #ifndef NET_ETHER_H
 #define NET_ETHER_H
 
+#include <avr/pgmspace.h>
+
 #include <stdint.h>
 
 #include "net/net.h"
@@ -26,6 +28,8 @@ struct eth_frame_s {
     struct eth_header_s *header;
     uint8_t *payload;
 };
+
+static const uint8_t eth_mcast_mac[6] PROGMEM = {0x01, 0x00, 0x5E, 0x00, 0x00, 0x00};
 
 int8_t eth_header_create(struct net_buff_s *net_buff, struct net_dev_s *net_dev,
                          int16_t type, const void *mac_d, const void *mac_s,

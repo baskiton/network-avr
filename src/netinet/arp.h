@@ -32,19 +32,16 @@ struct arp_hdr_s {
 #define ARP_OP_REQ 1    // ARP Request
 #define ARP_OP_REPLY 2  // ARP Reply
 
-void arp_tbl_set(uint8_t *restrict ip, uint8_t *restrict mac);
-uint8_t *arp_tbl_get(uint8_t *ip);
+int8_t arp_lookup(const in_addr_t *next_hop,
+                  uint8_t *mac_dest,
+                  struct net_dev_s *ndev,
+                  const in_addr_t *src_ip);
 
 void arp_init(void);
-struct net_buff_s *arp_create(struct net_dev_s *net_dev,
-                              uint16_t oper, uint16_t ptype,
-                              const uint8_t *dest_hw,
-                              const uint8_t *sha, const uint8_t *spa,
-                              const uint8_t *tha, const uint8_t *tpa);
 int8_t arp_send(struct net_dev_s *net_dev,
                 uint16_t oper, uint16_t ptype,
                 const uint8_t *dest_hw,
-                const uint8_t *sha, const uint8_t *spa,
-                const uint8_t *tha, const uint8_t *tpa);
+                const uint8_t *sha, const in_addr_t *spa,
+                const uint8_t *tha, const in_addr_t *tpa);
 
 #endif  /* !NETINET_ARP_H */

@@ -5,10 +5,12 @@
 #include "net/pkt_handler.h"
 #include "net/checksum.h"
 #include "net/ipconfig.h"
+#include "netinet/in.h"
 #include "netinet/ip.h"
 #include "netinet/icmp.h"
 #include "netinet/tcp.h"
 #include "netinet/udp.h"
+#include "netinet/arp.h"
 
 /*!
  * @brief Get the IP header
@@ -76,7 +78,7 @@ void ip_init(void) {
 }
 
 /*!
- * @brief
+ * @brief Create net Buffer for IPv4
  * @param sk Socket
  * @param msg Message
  * @param t_hdr_len Length of the transport layer header (TCP or UDP)
@@ -85,12 +87,14 @@ void ip_init(void) {
 struct net_buff_s *ip_create_nb(struct socket *sk,
                                 struct msghdr *msg,
                                 uint8_t t_hdr_len,
-                                ssize_t len) {
+                                size_t len) {
     struct net_buff_s *nb;
     struct net_dev_s *ndev;
     struct ip_hdr_s *iph;
     uint8_t *data;
-    uint16_t pkt_len;
+    size_t pkt_len;
+    in_addr_t next_hop;
+    uint8_t mac_dest[6];
 
     pkt_len = len + sizeof(*iph) + sizeof(struct eth_header_s);
 
@@ -104,6 +108,7 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
 
     /** TODO: calculate addr-port hash in socket */
 
+    /* create net buffer */
     nb = ndev_alloc_net_buff(ndev, pkt_len);
     if (!nb)
         // ENOBUFS
@@ -113,13 +118,33 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
     nb->tail += ETH_HDR_LEN;
     nb->transport_hdr_offset = nb->network_hdr_offset + sizeof(*iph);
 
-    if (netdev_hdr_create(nb, ndev, ETH_P_IP, ndev->broadcast,
+    /* check that dest IP in the same subnet */
+    if (ip4_check_same_subnet(sk->src_addr, sk->dst_addr, net_mask))
+        // if same, next-hop = dest IP
+        next_hop = sk->dst_addr;
+    // else if (ip4_is_loopback(sk->dst_addr))
+    /** TODO: if dest addr is loopback... ? */
+    //     next_hop = gateway;
+    else {
+        // if not same and not loopback, next-hop = default gateway
+        if (gateway == htonl(INADDR_BROADCAST))
+            // drop if gateway is not set
+            goto error;
+        next_hop = gateway;
+    }
+
+    /* find addr in ARP table */
+    if (arp_lookup(&next_hop, mac_dest, ndev, &sk->src_addr))
+        // Failed. Drop packet
+        goto error;
+
+    /* build hard header */
+    if (netdev_hdr_create(nb, ndev, ETH_P_IP, mac_dest,
                           ndev->dev_addr, pkt_len))
         goto error;
 
     /* build IP header */
     iph = put_net_buff(nb, sizeof(*iph));
-
     iph->version = 4;
     iph->ihl = 5;
     iph->tos = 0;
@@ -134,7 +159,6 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
     iph->hdr_chks = in_checksum(iph, iph->ihl * 4);
 
     data = put_net_buff(nb, len);   // data is transport_header_offset
-
     data += t_hdr_len;  // now data is the pointer to store message
 
     /* copy message to buffer */

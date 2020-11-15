@@ -4,10 +4,6 @@
 #include "netinet/ip.h"
 #include "netinet/udp.h"
 
-#include <stdio.h>
-#include <avr/pgmspace.h>
-
-
 /*!
  * @brief Get the UDP header
  * @param net_buff Pointer to network buffer
@@ -49,8 +45,7 @@ static int8_t udp_send(struct socket *sk) {
  */
 ssize_t udp_send_msg(struct socket *restrict sk,
                      struct msghdr *restrict msg) {
-    ssize_t len = msg->msg_iov->iov_len;
-    ssize_t ulen = len;
+    size_t ulen = msg->msg_iov->iov_len;
     struct sockaddr_in *addr_in = msg->msg_name;
     struct net_buff_s *nb;
     int8_t err;
@@ -96,5 +91,5 @@ ssize_t udp_send_msg(struct socket *restrict sk,
         return err;
     }
 
-    return len;
+    return msg->msg_iov->iov_len;;
 }

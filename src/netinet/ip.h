@@ -69,6 +69,17 @@ struct ip_hdr_s {
      * size: 0-10 * 32bits */
 };
 
+/*!
+ * @brief Check that the destination address is on the same subnet
+ * @param my Our IP
+ * @param dest Destination IP
+ * @param mask Subnet Mask
+ * @return True if dest in same subnet
+ */
+static inline bool ip4_check_same_subnet(in_addr_t my, in_addr_t dest, in_addr_t mask) {
+    return ((my ^ dest) & mask) ? false : true;
+}
+
 inline bool ip4_is_broadcast(const void *ip) {
     return (*(in_addr_t *)ip == htonl(INADDR_BROADCAST));
 }
@@ -90,7 +101,7 @@ void ip_init(void);
 struct net_buff_s *ip_create_nb(struct socket *sk,
                                 struct msghdr *msg,
                                 uint8_t t_hdr_len,
-                                ssize_t len);
+                                size_t len);
 int8_t ip_send_sock(struct socket *sk);
 
 int8_t ip_proto_handler(uint8_t proto, struct net_buff_s *net_buff);

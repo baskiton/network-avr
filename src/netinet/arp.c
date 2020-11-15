@@ -17,11 +17,11 @@ struct arp_tbl_entry_s arp_tbl;
  * @param ip IP address to set
  * @param mac MAC address to set
  */
-void arp_tbl_set(uint8_t *restrict ip, uint8_t *restrict mac) {
-    if (memcmp(&arp_tbl.ip, ip, IP4_LEN))
+static void arp_tbl_set(const in_addr_t *ip, const uint8_t *mac) {
+    if (memcmp(&arp_tbl.ip, ip, IP4_LEN)) {
         memcpy(&arp_tbl.ip, ip, IP4_LEN);
-
-    memcpy(arp_tbl.mac, mac, ETH_MAC_LEN);
+        memcpy(arp_tbl.mac, mac, ETH_MAC_LEN);
+    }
 }
 
 /*!
@@ -30,10 +30,52 @@ void arp_tbl_set(uint8_t *restrict ip, uint8_t *restrict mac) {
  * @param ip IP address to search
  * @return MAC address or NULL if there is no entry
  */
-uint8_t *arp_tbl_get(uint8_t *ip) {
+static uint8_t *arp_tbl_get(const void *ip) {
     if (!memcmp(&arp_tbl.ip, ip, IP4_LEN))
         return arp_tbl.mac;
     return NULL;
+}
+
+/*!
+ * @brief Find addr in ARP table and set destination MAC
+ * @param next_hop Next-hop IP
+ * @param mac_dest Pointer to store Destination MAC
+ * @param ndev Network device
+ * @param src_ip Source IP for sending ARP-request
+ * @return 0 on success
+ */
+int8_t arp_lookup(const in_addr_t *next_hop,
+                  uint8_t *mac_dest,
+                  struct net_dev_s *ndev,
+                  const in_addr_t *src_ip) {
+    /* check next-hop */
+    if (ip4_is_broadcast(next_hop))
+        /** TODO: what is broadcast in IPv4? */
+        memcpy(mac_dest, ndev->broadcast, ETH_MAC_LEN);
+    else if (ip4_is_multicast(next_hop))
+        memcpy_P(mac_dest, eth_mcast_mac, ETH_MAC_LEN);
+    else {  // unicast
+        uint8_t *mac = arp_tbl_get(next_hop);
+        if (mac)
+            memcpy(mac_dest, mac, ETH_MAC_LEN);
+        else {  // not in table. send ARP request
+            arp_send(ndev, ARP_OP_REQ, ETH_P_IP, NULL,
+                     ndev->dev_addr, src_ip, NULL, next_hop);
+
+            /* waiting for ARP-reply */
+            for (uint16_t i = 65535; i != 0; i--) {
+                mac = arp_tbl_get(next_hop);
+                if (mac)
+                    memcpy(mac_dest, mac, ETH_MAC_LEN);
+                    break;
+            }
+            if (!mac)
+                // times out
+                return -1;
+        }
+    }
+
+    return 0;
 }
 
 /*!
@@ -78,6 +120,9 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
     if (!memcmp(arph->spa, arph->tpa, IP4_LEN))
         goto free_buf;
 
+    /* Update ARP table */
+    arp_tbl_set((void *)arph->spa, arph->sha);
+
     /* check if the packet is for us */
     if (memcmp(arph->tpa, &my_ip, IP4_LEN))
         goto free_buf;
@@ -111,8 +156,6 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
         goto out;
     }
 
-    /* If it is a REPLY, update ARP table */
-    arp_tbl_set(arph->spa, arph->sha);
     ret = NETDEV_RX_SUCCESS;
 
 free_buf:
@@ -168,11 +211,11 @@ void arp_init(void) {
  * @param tpa Target IP
  * @return Pointer to new buffer with ARP packet
  */
-struct net_buff_s *arp_create(struct net_dev_s *net_dev,
-                              uint16_t oper, uint16_t ptype,
-                              const uint8_t *dest_hw,
-                              const uint8_t *sha, const uint8_t *spa,
-                              const uint8_t *tha, const uint8_t *tpa) {
+static struct net_buff_s *arp_create(struct net_dev_s *net_dev,
+                                     uint16_t oper, uint16_t ptype,
+                                     const uint8_t *dest_hw,
+                                     const uint8_t *sha, const in_addr_t *spa,
+                                     const uint8_t *tha, const in_addr_t *tpa) {
     struct net_buff_s *net_buff;
     struct arp_hdr_s *arph;
 
@@ -187,7 +230,7 @@ struct net_buff_s *arp_create(struct net_dev_s *net_dev,
     if (!sha)
         sha = net_dev->dev_addr;
     if (!spa)
-        spa = (void *)&my_ip;
+        spa = &my_ip;
 
     net_buff->protocol = htons(ETH_P_ARP);
     net_buff->tail += ETH_HDR_LEN;
@@ -196,7 +239,7 @@ struct net_buff_s *arp_create(struct net_dev_s *net_dev,
         goto out;
 
     arph = put_net_buff(net_buff, sizeof(struct arp_hdr_s));
-    arph->htype = htons(1); // Hardware type is Ethernet
+    arph->htype = htons(HWT_ETHER); // Hardware type is Ethernet
     arph->ptype = htons(ptype);
     arph->hlen = ETH_MAC_LEN;
     arph->plen = IP4_LEN;
@@ -231,8 +274,8 @@ out:
 int8_t arp_send(struct net_dev_s *net_dev,
                  uint16_t oper, uint16_t ptype,
                  const uint8_t *dest_hw,
-                 const uint8_t *sha, const uint8_t *spa,
-                 const uint8_t *tha, const uint8_t *tpa) {
+                 const uint8_t *sha, const in_addr_t *spa,
+                 const uint8_t *tha, const in_addr_t *tpa) {
     struct net_buff_s *nb;
 
     nb = arp_create(net_dev, oper, ptype, dest_hw, sha, spa, tha, tpa);

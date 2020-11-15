@@ -1,5 +1,7 @@
 #include <avr/pgmspace.h>
 
+#include <stdint.h>
+
 #include "netinet/tcp.h"
 #include "netinet/udp.h"
 #include "netinet/icmp.h"
