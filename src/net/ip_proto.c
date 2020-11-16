@@ -7,15 +7,13 @@
  * @brief Handlers for specific protocols.
  */
 struct ip_proto_hdlr_ops_s {
+    proto_hdlr_t ip_c;  // IP common handler
     proto_hdlr_t icmp;  // ICMP handler
-    proto_hdlr_t tcp;   // TCP handler
-    proto_hdlr_t udp;   // UDP handler
 };
 
 static struct ip_proto_hdlr_ops_s ip_proto_ops = {
+    .ip_c = NULL,
     .icmp = NULL,
-    .tcp = NULL,
-    .udp = NULL,
 };
 
 /*!
@@ -33,14 +31,9 @@ int8_t ip_proto_handler(uint8_t proto, struct net_buff_s *net_buff) {
             break;
         
         case IPPROTO_TCP:
-            if (ip_proto_ops.tcp) {
-                return ip_proto_ops.tcp(net_buff);
-            }
-            break;
-        
         case IPPROTO_UDP:
-            if (ip_proto_ops.udp) {
-                return ip_proto_ops.udp(net_buff);
+            if (ip_proto_ops.ip_c) {
+                return ip_proto_ops.ip_c(net_buff);
             }
             break;
         
@@ -59,16 +52,12 @@ int8_t ip_proto_handler(uint8_t proto, struct net_buff_s *net_buff) {
  */
 void ip_proto_handler_add(uint8_t proto, proto_hdlr_t handler) {
     switch (proto) {
+        case IPPROTO_IP:
+            ip_proto_ops.ip_c = handler;
+            break;
+        
         case IPPROTO_ICMP:
             ip_proto_ops.icmp = handler;
-            break;
-        
-        case IPPROTO_TCP:
-            ip_proto_ops.tcp = handler;
-            break;
-        
-        case IPPROTO_UDP:
-            ip_proto_ops.udp = handler;
             break;
         
         default:
@@ -82,16 +71,12 @@ void ip_proto_handler_add(uint8_t proto, proto_hdlr_t handler) {
  */
 void ip_proto_handler_del(uint8_t proto) {
     switch (proto) {
+        case IPPROTO_IP:
+            ip_proto_ops.ip_c = NULL;
+            break;
+        
         case IPPROTO_ICMP:
             ip_proto_ops.icmp = NULL;
-            break;
-        
-        case IPPROTO_TCP:
-            ip_proto_ops.tcp = NULL;
-            break;
-        
-        case IPPROTO_UDP:
-            ip_proto_ops.udp = NULL;
             break;
         
         default:

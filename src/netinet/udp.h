@@ -13,7 +13,15 @@ struct udp_hdr_s {
     uint16_t chks;      // Checksum
 };
 
-void udp_init(void);
+/*!
+ * @brief Get the UDP header
+ * @param nb Pointer to network buffer
+ * @return Pointer to UDP header
+ */
+static inline struct udp_hdr_s *get_udp_hdr(struct net_buff_s *nb) {
+    return (void *)(nb->head + nb->transport_hdr_offset);
+}
+
 ssize_t udp_send_msg(struct socket *restrict sk,
                      struct msghdr *restrict msg);
 

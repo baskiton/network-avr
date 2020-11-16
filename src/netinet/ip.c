@@ -23,6 +23,45 @@ struct ip_hdr_s *get_ip_hdr(struct net_buff_s *net_buff) {
 }
 
 /*!
+ * @brief Common handler for IP (except ICMP)
+ */
+static int8_t ip_common_recv(struct net_buff_s *nb) {
+    struct socket *sk;
+    void *transp_hdr = nb->head + nb->transport_hdr_offset;
+    struct ip_hdr_s *iph = get_ip_hdr(nb);
+    struct sock_ap_pairs_s pairs = {
+        .my_addr = iph->ip_dst,
+        .fe_addr = iph->ip_src,
+    };
+
+    switch (iph->protocol) {
+        case IPPROTO_TCP:
+            pairs.my_port = ((struct tcp_hdr_s *)transp_hdr)->port_dst;
+            pairs.fe_port = ((struct tcp_hdr_s *)transp_hdr)->port_src;
+            break;
+        
+        case IPPROTO_UDP:
+            pairs.my_port = ((struct udp_hdr_s *)transp_hdr)->port_dst;
+            pairs.fe_port = ((struct udp_hdr_s *)transp_hdr)->port_src;
+            break;
+        
+        default:    // unreach in theory
+            goto drop;
+    }
+
+    sk = socket_find(&pairs, iph->protocol);
+    if (sk) {
+        nb_enqueue(nb, &sk->nb_rx_q);
+        return NETDEV_RX_SUCCESS;
+    }
+
+drop:
+    free_net_buff(nb);
+
+    return NETDEV_RX_DROP;
+}
+
+/*!
  * @brief IP receive main handler
  * @param nb Network buffer
  * @return 0 if success
@@ -72,8 +111,8 @@ out:
  */
 void ip_init(void) {
     icmp_init();
-    tcp_init();
-    udp_init();
+
+    ip_proto_handler_add(IPPROTO_IP, ip_common_recv);
 
     pkt_hdlr_add(ETH_P_IP, ip_recv);
 }

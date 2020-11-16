@@ -5,14 +5,6 @@
 #include "netinet/tcp.h"
 
 /*!
- * @brief Initialize TCP handler
- */
-void tcp_init(void) {
-    /** TODO: set the valid handlers */
-    ip_proto_handler_add(IPPROTO_TCP, NULL);
-}
-
-/*!
  *
  */
 ssize_t tcp_send_msg(struct socket *restrict sk,

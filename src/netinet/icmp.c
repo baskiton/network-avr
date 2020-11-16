@@ -97,7 +97,7 @@ static bool icmp_echo(struct net_buff_s *nb) {
 /*!
  * @brief Handler for ICMP
  */
-int8_t icmp_recv(struct net_buff_s *nb) {
+static int8_t icmp_recv(struct net_buff_s *nb) {
     bool ret = false;
     struct ip_hdr_s *iph = get_ip_hdr(nb);
     struct icmp_hdr_s *icmp_h = get_icmp_hdr(nb);
@@ -125,8 +125,7 @@ int8_t icmp_recv(struct net_buff_s *nb) {
             break;
         
         default:
-            ret = false;
-            break;
+            goto drop;
     }
     if (ret)
         return NETDEV_RX_SUCCESS;

@@ -56,7 +56,15 @@ struct tcp_opt_field_s {
     uint8_t opt_len;
 };
 
-void tcp_init(void);
+/*!
+ * @brief Get the TCP header
+ * @param nb Pointer to network buffer
+ * @return Pointer to TCP header
+ */
+static inline struct tcp_hdr_s *get_tcp_hdr(struct net_buff_s *nb) {
+    return (void *)(nb->head + nb->transport_hdr_offset);
+}
+
 ssize_t tcp_send_msg(struct socket *restrict sk,
                      struct msghdr *restrict msg);
 

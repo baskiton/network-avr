@@ -4,23 +4,6 @@
 #include "netinet/ip.h"
 #include "netinet/udp.h"
 
-/*!
- * @brief Get the UDP header
- * @param net_buff Pointer to network buffer
- * @return Pointer to UDP header
- */
-struct udp_hdr_s *get_udp_hdr(struct net_buff_s *net_buff) {
-    return (void *)(net_buff->head + net_buff->transport_hdr_offset);
-}
-
-/*!
- * @brief Initialize UDP handler
- */
-void udp_init(void) {
-    /** TODO: set the valid handlers */
-    ip_proto_handler_add(IPPROTO_UDP, NULL);
-}
-
 static int8_t udp_send(struct socket *sk) {
     struct udp_hdr_s *udph;
     struct net_buff_s *nb;
