@@ -86,12 +86,12 @@ int8_t arp_lookup(const in_addr_t *next_hop,
  * @param net_buff Pointer to network buffer
  * @return Pointer to ARP header
  */
-static struct arp_hdr_s *get_arp_hdr(struct net_buff_s *net_buff) {
+static inline struct arp_hdr_s *get_arp_hdr(struct net_buff_s *net_buff) {
     return (void *)(net_buff->head + net_buff->network_hdr_offset);
 }
 
-static inline int8_t arp_xmit(struct net_buff_s *net_buff) {
-    return netdev_list_xmit(net_buff);
+static inline void arp_xmit(struct net_buff_s *net_buff) {
+    netdev_list_xmit(net_buff);
 }
 
 /*!
@@ -158,6 +158,8 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
         ret = NETDEV_RX_SUCCESS;
         goto out;
     }
+
+    /* ARP_OP_REPLY processing is not required */
 
     ret = NETDEV_RX_SUCCESS;
 
@@ -274,18 +276,16 @@ out:
  * @param tha Target MAC (migth be \a NULL)
  * @param tpa Target IP
  */
-int8_t arp_send(struct net_dev_s *net_dev,
-                 uint16_t oper, uint16_t ptype,
-                 const uint8_t *dest_hw,
-                 const uint8_t *sha, const in_addr_t *spa,
-                 const uint8_t *tha, const in_addr_t *tpa) {
+void arp_send(struct net_dev_s *net_dev,
+              uint16_t oper, uint16_t ptype,
+              const uint8_t *dest_hw,
+              const uint8_t *sha, const in_addr_t *spa,
+              const uint8_t *tha, const in_addr_t *tpa) {
     struct net_buff_s *nb;
 
     nb = arp_create(net_dev, oper, ptype, dest_hw, sha, spa, tha, tpa);
-    if (!nb) {
-        printf_P(PSTR("arp_send(): failed to creating buffer\n"));
-        return -1;
-    }
+    if (!nb)
+        return;
 
-    return arp_xmit(nb);
+    arp_xmit(nb);
 }

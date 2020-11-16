@@ -38,10 +38,10 @@ int8_t arp_lookup(const in_addr_t *next_hop,
                   const in_addr_t *src_ip);
 
 void arp_init(void);
-int8_t arp_send(struct net_dev_s *net_dev,
-                uint16_t oper, uint16_t ptype,
-                const uint8_t *dest_hw,
-                const uint8_t *sha, const in_addr_t *spa,
-                const uint8_t *tha, const in_addr_t *tpa);
+void arp_send(struct net_dev_s *net_dev,
+              uint16_t oper, uint16_t ptype,
+              const uint8_t *dest_hw,
+              const uint8_t *sha, const in_addr_t *spa,
+              const uint8_t *tha, const in_addr_t *tpa);
 
 #endif  /* !NETINET_ARP_H */
