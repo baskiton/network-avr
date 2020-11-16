@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "net/socket.h"
 #include "netinet/in.h"
 
 struct udp_hdr_s {

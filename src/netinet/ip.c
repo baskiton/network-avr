@@ -5,6 +5,7 @@
 #include "net/pkt_handler.h"
 #include "net/checksum.h"
 #include "net/ipconfig.h"
+#include "net/socket.h"
 #include "netinet/in.h"
 #include "netinet/ip.h"
 #include "netinet/icmp.h"
@@ -101,12 +102,12 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
     /**
      * TODO: when there are several devices (including virtual ones),
      * search for the device and its IP by the destination address.
-     * Also need to get the destination MAC (routing).
      */
     ndev = curr_net_dev;
     sk->src_addr = my_ip;
 
-    /** TODO: calculate addr-port hash in socket */
+    /* calculate and set addr-port hash in socket */
+    socket_set_hash(sk);
 
     /* create net buffer */
     nb = ndev_alloc_net_buff(ndev, pkt_len);
@@ -118,6 +119,7 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
     nb->tail += ETH_HDR_LEN;
     nb->transport_hdr_offset = nb->network_hdr_offset + sizeof(*iph);
 
+    /* Get the destination MAC */
     /* check that dest IP in the same subnet */
     if (ip4_check_same_subnet(sk->src_addr, sk->dst_addr, net_mask))
         // if same, next-hop = dest IP

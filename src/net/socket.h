@@ -104,7 +104,17 @@ struct socket {
                   *next;    // next socket in list
 };
 
+struct sock_ap_pairs_s {
+    in_addr_t my_addr;     // my address
+    in_addr_t fe_addr;     // foreign address
+    in_port_t my_port;     // my port
+    in_port_t fe_port;     // foreign port
+};
+
 void socket_list_init(void);
+
+void socket_set_hash(struct socket *sk);
+struct socket *socket_find(struct sock_ap_pairs_s *pairs, uint8_t prot);
 
 struct socket *accept(struct socket *restrict sk,
                       struct sockaddr *restrict addr,

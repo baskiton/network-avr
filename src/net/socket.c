@@ -7,6 +7,7 @@
 #include "net/net.h"
 #include "net/socket.h"
 #include "net/uio.h"
+#include "net/checksum.h"
 
 extern int8_t inet_sock_create(struct socket *sk, uint8_t protocol);
 extern void nb_queue_clear(struct nb_queue_s *q);
@@ -52,6 +53,39 @@ static void socket_list_del(struct socket *entry) {
  */
 #define socket_list_for_each(i)   \
         for (i = socket_list; i; i = i->next)
+
+/*!
+ * @brief Set port-addr hash sum
+ * @param sk Socket
+ */
+void socket_set_hash(struct socket *sk) {
+    struct sock_ap_pairs_s pairs;
+
+    pairs.my_addr = sk->src_addr;
+    pairs.my_port = sk->src_port;
+    pairs.fe_addr = sk->dst_addr;
+    pairs.fe_port = sk->dst_port;
+
+    sk->sk_hash = sock_hash_calc(&pairs, sk->protocol);
+}
+
+/*!
+ * @brief Search mounted socket by the hash sum
+ * @param pairs Port-addr pairs
+ * @param prot Protocol
+ * @return Founded socket or NULL on failed
+ */
+struct socket *socket_find(struct sock_ap_pairs_s *pairs, uint8_t prot) {
+    struct socket *sk;
+    uint32_t hash = sock_hash_calc(pairs, prot);
+
+    socket_list_for_each(sk) {
+        if (sk->sk_hash == hash)
+            break;
+    }
+
+    return sk;
+}
 
 /*!
  * @brief Used on \a server side. Accepts a received incoming attempt
