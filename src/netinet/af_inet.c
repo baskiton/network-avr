@@ -130,6 +130,16 @@ static ssize_t inet_sendmsg(struct socket *restrict sk,
     }
 }
 
+/*!
+ * TODO:
+ */
+static ssize_t inet_recvmsg(struct socket *restrict sk,
+                            struct msghdr *restrict msg,
+                            uint8_t flags) {
+
+    return -1;
+}
+
 /** TODO: */
 static const struct protocol_ops inet_stream_ops PROGMEM = {
     .release = inet_release,
@@ -139,7 +149,7 @@ static const struct protocol_ops inet_stream_ops PROGMEM = {
     .connect = NULL,
     .listen = NULL,
     .sendmsg = inet_sendmsg,
-    .recvmsg = NULL,
+    .recvmsg = inet_recvmsg,
 };
 
 /** TODO: */
@@ -151,7 +161,7 @@ static const struct protocol_ops inet_dgram_ops PROGMEM = {
     .connect = NULL,
     .listen = NULL,
     .sendmsg = inet_sendmsg,
-    .recvmsg = NULL,
+    .recvmsg = inet_recvmsg,
 };
 
 /*!

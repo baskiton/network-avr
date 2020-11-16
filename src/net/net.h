@@ -62,7 +62,7 @@ struct protocol_ops {
                        struct msghdr *restrict msg);
     ssize_t (*recvmsg)(struct socket *restrict sk,
                        struct msghdr *restrict msg,
-                       size_t len, uint8_t flags);
+                       uint8_t flags);
 };
 
 /**

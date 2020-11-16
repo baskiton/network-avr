@@ -188,8 +188,27 @@ ssize_t recvfrom(struct socket *restrict sk,
                  uint8_t flags,
                  struct sockaddr *restrict addr,
                  socklen_t *restrict addr_len) {
+    ssize_t (*rcv_msg_f)(struct socket *, struct msghdr *, uint8_t);
+    ssize_t ret;
+    struct msghdr msg;
+    struct iovec iov;
 
-    return 0;
+    if (!sk) {
+        // ENOTSOCK
+        return -1;
+    }
+
+    iovec_import(&iov, (void *)buff, buff_size);
+
+    msg.msg_name = addr;
+    msg.msg_namelen = 0;
+    msg.msg_flags = 0;
+    msg.msg_iov = &iov;
+
+    rcv_msg_f = pgm_read_ptr(&sk->p_ops->recvmsg);
+    ret = rcv_msg_f(sk, &msg, flags);   // recvmsg()
+
+    return ret;
 }
 
 /*!
