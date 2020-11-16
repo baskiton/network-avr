@@ -32,6 +32,7 @@ struct icmp_hdr_s {
     } hdr_data;     // Header Data
 };
 
+struct icmp_hdr_s *get_icmp_hdr(struct net_buff_s *net_buff);
 void icmp_init(void);
 int8_t icmp_hdr_create(struct net_buff_s *nb,
                        uint8_t type, uint8_t code,

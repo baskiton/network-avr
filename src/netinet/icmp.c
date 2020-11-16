@@ -15,8 +15,28 @@
  * @param net_buff Pointer to network buffer
  * @return Pointer to ICMP header
  */
-static struct icmp_hdr_s *get_icmp_hdr(struct net_buff_s *net_buff) {
+struct icmp_hdr_s *get_icmp_hdr(struct net_buff_s *net_buff) {
     return (void *)(net_buff->head + net_buff->transport_hdr_offset);
+}
+
+/*!
+ *
+ */
+static bool icmp_enque_to_socket(struct net_buff_s *nb) {
+    struct socket *sk;
+    struct ip_hdr_s *iph = get_ip_hdr(nb);
+    struct sock_ap_pairs_s pairs = {
+        .my_addr = iph->ip_dst,
+        .fe_addr = iph->ip_src,
+    };
+
+    sk = socket_find(&pairs, iph->protocol);
+    if (!sk)
+        return false;
+
+    nb_enqueue(nb, &sk->nb_rx_q);
+
+    return true;
 }
 
 /*!
@@ -98,6 +118,10 @@ int8_t icmp_recv(struct net_buff_s *nb) {
     switch (icmp_h->type) {
         case ICMP_ECHO_REQ:
             ret = icmp_echo(nb);
+            break;
+        
+        case ICMP_ECHO_REPLY:
+            ret = icmp_enque_to_socket(nb);
             break;
         
         default:

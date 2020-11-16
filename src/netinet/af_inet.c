@@ -5,6 +5,7 @@
 #include "netinet/tcp.h"
 #include "netinet/udp.h"
 #include "netinet/icmp.h"
+#include "net/ping.h"
 #include "netinet/arp.h"
 #include "netinet/ip.h"
 #include "netinet/in.h"
@@ -118,13 +119,13 @@ static ssize_t inet_sendmsg(struct socket *restrict sk,
             return tcp_send_msg(sk, msg);
         case IPPROTO_UDP:
             return udp_send_msg(sk, msg);
-        // case IPPROTO_ICMP:
-        //     return 0;
+        case IPPROTO_ICMP:
+            return ping_send_msg(sk, msg);
         // case IPPROTO_RAW:
         //     return 0;
         
         default:
-            // theoretically impossible, but still...
+            // in theory impossible, but still...
             return -1;
     }
 }
