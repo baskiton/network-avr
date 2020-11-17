@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include <defines.h>
 
@@ -57,6 +58,7 @@ int8_t inet_class_determine(const void *restrict ip, in_addr_t *restrict netmask
  * @return 0 on error
  */
 int8_t inet_aton(const char *restrict cp, struct in_addr *restrict inp) {
+    /** TODO: */
 
     return 0;
 }
@@ -69,27 +71,12 @@ int8_t inet_aton(const char *restrict cp, struct in_addr *restrict inp) {
  * @return Binary IP in network byte order; (in_addr_t)(-1) on error
  */
 in_addr_t inet_addr(const char *cp) {
-    /** TODO: */
-    in_addr_t ip = 0;
-    char tmp_str[4] = {0, 0, 0, 0};
-    int8_t y;
+    in_addr_t ip;
 
-    for (int8_t i = 0; i < 4; i++) {
-        ip <<= 8;
-        y = 0;
-        memset(tmp_str, 0, 4);
-        while ((*cp != 0) && (*cp != '.') && (y < 3)) {
-            tmp_str[y] = *cp;
-            cp++;
-            y++;
-        }
-        ip |= (atol(tmp_str) & 0xFF);
-        if (*cp != 0)
-            cp++;
-    }
+    if (inet_pton(AF_INET, cp, &ip) <= 0)
+        ip = (in_addr_t)(-1);
 
-    return htonl(ip);
-    // return (in_addr_t)(-1);
+    return ip;
 }
 
 /*!
@@ -110,14 +97,27 @@ char *inet_ntoa(struct in_addr in) {
  * @param src Internet address in binary network format
  * @param dst Buffer to stores the resulting text string; not be \a NULL
  * @param size Length of \p dst
- * @return Pointer to the buffer containing the text string
+ * @return Pointer to the buffer containing the text string (dst)
  * if the conversion succeeds, and \a NULL otherwise, and set
  * \a errno to indicate the error.
  */
 const char *inet_ntop(int8_t af, const void *restrict src,
                       char *restrict dst, socklen_t size) {
-    /** TODO: */
+    if (af == AF_INET) {
+        const uint8_t *ptr = src;
+        const char *fmt = "%u.%u.%u.%u";
+        char tmp[16];
+        int len;
 
+        len = sprintf(tmp, fmt, ptr[0], ptr[1], ptr[2], ptr[3]);
+        if ((len <= 0) || (len >= size)) {
+            // ENOSPC
+            return NULL;
+        }
+        return strcpy(dst, tmp);
+    }
+
+    // EAFNOSUPPORT
     return NULL;
 }
 
@@ -133,7 +133,46 @@ const char *inet_ntop(int8_t af, const void *restrict src,
  * -1 with \a errno set to \a [EAFNOSUPPORT] if the af argument is unknown.
  */
 int8_t inet_pton(int8_t af, const char *restrict src, void *restrict dst) {
-    /** TODO: */
+    // const char *end = src + strlen(src);
+    char tmp[4], *tmp_p, ch;
+    uint8_t octets, flag;
 
-    return 0;
+    if (af != AF_INET)
+        // EAFNOSUPPORT
+        return -1;
+
+    octets = flag = 0;
+    *(tmp_p = tmp) = 0;
+
+    // while (src < end) {
+    while ((ch = *src++)) {
+        // ch = *src++;
+        if (isdigit(ch)) {
+            uint16_t new = *tmp_p * 10 + (ch - '0');
+
+            if ((flag && !(*tmp_p)) || (new > 255))
+                return 0;
+
+            *tmp_p = new;
+
+            if (!flag) {
+                if (++octets > 4)
+                    return 0;
+                flag = 1;
+            }
+        } else if (ch == '.' && flag) {
+            if (octets == 4)
+                return 0;
+            *++tmp_p = 0;
+            flag = 0;
+        } else
+            return 0;
+    }
+
+    if (octets < 4)
+        return 0;
+
+    memcpy(dst, tmp, sizeof(tmp));
+
+    return 1;
 }
