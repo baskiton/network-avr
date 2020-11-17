@@ -81,7 +81,7 @@ static bool icmp_echo(struct net_buff_s *nb) {
 
     memcpy(&iph->ip_dst, &iph->ip_src, IP4_LEN);
     memcpy(&iph->ip_src, &my_ip, IP4_LEN);
-    iph->ttl--;
+    iph->ttl = 64;
     iph->hdr_chks = 0;
     iph->hdr_chks = in_checksum(iph, iph->ihl * 4);
 

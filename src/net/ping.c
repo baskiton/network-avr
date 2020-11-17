@@ -28,8 +28,10 @@ ssize_t ping_send_msg(struct socket *restrict sk,
         // EOPNOTSUPP
         return -1;
 
-    if (icmph->type == ICMP_ECHO_REQ &&
-        icmph->code == 0)
+    if (icmph->type != ICMP_ECHO_REQ ||
+        icmph->code != 0)
+        // EINVAL
+        return -1;
 
     /* verify address */
     if (addr_in) {
@@ -50,7 +52,7 @@ ssize_t ping_send_msg(struct socket *restrict sk,
 
     icmph->hdr_data.echo.id = sk->src_port;
     icmph->chks = 0;
-    icmph->chks = in_checksum(&icmph, len);
+    icmph->chks = in_checksum(icmph, len);
 
     nb = ip_create_nb(sk, msg, 0, len);
     if (!nb)
