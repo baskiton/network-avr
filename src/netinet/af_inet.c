@@ -172,11 +172,10 @@ static const struct protocol_ops inet_dgram_ops PROGMEM = {
  * @return 0 on success
  */
 int8_t inet_sock_create(struct socket *sk, uint8_t protocol) {
-    int8_t err;
+    int8_t err = -1;    // EPROTONOSUPPORT
 
     /** if \p protocol == 0, set default value */
     switch (sk->type) {
-        err = -1;   // EPROTONOSUPPORT
         case SOCK_STREAM:
             if (!protocol)
                 protocol = IPPROTO_TCP;

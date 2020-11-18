@@ -116,7 +116,7 @@ static int8_t arp_proc(struct net_buff_s *net_buff) {
 
     /* Check for multicast and loopback target IP */
     if ((inet_class_determine(arph->tpa, NULL) == IN_CLASS_D) ||
-        ((arph->tpa[0] & 0xF0) == 0x7F))
+        (arph->tpa[0] == 0x7F))
         goto free_buf;
 
     /* just in case... */

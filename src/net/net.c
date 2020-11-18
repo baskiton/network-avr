@@ -1,4 +1,3 @@
-#include <avr/io.h>
 #include <avr/pgmspace.h>
 
 #include <stdint.h>
@@ -8,11 +7,6 @@
 #include "net/net.h"
 #include "net/net_dev.h"
 #include "net/ether.h"
-#include "netinet/arp.h"
-#include "netinet/ip.h"
-#include "netinet/tcp.h"
-#include "netinet/udp.h"
-#include "netinet/icmp.h"
 
 extern void inet_init(void);
 

@@ -74,5 +74,5 @@ ssize_t udp_send_msg(struct socket *restrict sk,
         return err;
     }
 
-    return msg->msg_iov->iov_len;;
+    return msg->msg_iov->iov_len;
 }
