@@ -93,7 +93,7 @@ ssize_t ping_recv_msg(struct socket *restrict sk,
     if (!nb)
         return -1;
 
-    from = (get_icmp_hdr(nb) + 1);
+    from = get_ip_hdr(nb);
     len = nb->end - (uint8_t *)from;
 
     if (len > max_len)
