@@ -1,4 +1,5 @@
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -105,4 +106,27 @@ void network_init(void) {
     socket_list_init();
 
     inet_init();
+}
+
+/*!
+ * @brief Get the net buffer from receive socket queue, wait if empty
+ * @param q Queue
+ * @param flags Flags
+ * @return Pointer to buffer or \c NULL if error
+ */
+struct net_buff_s *net_buff_rcv(struct nb_queue_s *q, uint8_t flags) {
+    struct net_buff_s *nb = NULL;
+    uint32_t timeout;
+
+    /** TODO: implement the timeout! */
+    timeout = (flags & MSG_DONTWAIT) ? 0 : (F_CPU / 20);
+
+    do {
+        nb = nb_dequeue(q);
+        if (nb)
+            return nb;
+        _delay_us(0);
+    } while (timeout--);
+
+    return NULL;
 }

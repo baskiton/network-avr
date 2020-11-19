@@ -7,6 +7,7 @@
 #include "net/checksum.h"
 #include "net/ipconfig.h"
 #include "net/ether.h"
+#include "net/ping.h"
 #include "netinet/ip.h"
 #include "netinet/icmp.h"
 
@@ -17,26 +18,6 @@
  */
 struct icmp_hdr_s *get_icmp_hdr(struct net_buff_s *net_buff) {
     return (void *)(net_buff->head + net_buff->transport_hdr_offset);
-}
-
-/*!
- *
- */
-static bool icmp_enque_to_socket(struct net_buff_s *nb) {
-    struct socket *sk;
-    struct ip_hdr_s *iph = get_ip_hdr(nb);
-    struct sock_ap_pairs_s pairs = {
-        .my_addr = iph->ip_dst,
-        .fe_addr = iph->ip_src,
-    };
-
-    sk = socket_find(&pairs, iph->protocol);
-    if (!sk)
-        return false;
-
-    nb_enqueue(nb, &sk->nb_rx_q);
-
-    return true;
 }
 
 /*!
@@ -121,11 +102,19 @@ static int8_t icmp_recv(struct net_buff_s *nb) {
             break;
         
         case ICMP_ECHO_REPLY:
-            ret = icmp_enque_to_socket(nb);
+            ret = ping_rcv(nb);
             break;
         
+        /** 
+         * TODO:
+         *  icmp_discadr
+         *  icmp_unreach
+         *  icmp_redirect
+         *  icmp_timestamp
+         */
+        
         default:
-            goto drop;
+            break;
     }
     if (ret)
         return NETDEV_RX_SUCCESS;

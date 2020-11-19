@@ -118,6 +118,8 @@ struct net_buff_s {
 
 typedef int8_t (*proto_hdlr_t)(struct net_buff_s *net_buff);
 
+struct net_buff_s *net_buff_rcv(struct nb_queue_s *q, uint8_t flags);
+
 struct net_buff_s *net_buff_alloc(uint16_t size);
 struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size);
 void *put_net_buff(struct net_buff_s *net_buff, uint16_t len);
@@ -212,6 +214,15 @@ static inline void nb_queue_dump(struct nb_queue_s *q) {
 
     putchar(']');
     putchar('\n');
+}
+
+/*!
+ * @brief Check if queue is empty
+ * @param q Queue
+ * @return True if the queue is empty
+ */
+static inline bool nb_queue_is_empty(struct nb_queue_s *q) {
+    return q->next == (struct net_buff_s *)q;
 }
 
 #endif  /* !NET_NET_H */

@@ -41,10 +41,10 @@
 #define MSG_DONTROUTE 2     // Send without using routing tables
 #define MSG_EOR 4           // Terminates a record (if supported by the protocol)
 #define MSG_OOB 8           // Out-of-band data (only for stream socket type?)
-#define MSG_NOSIGNAL 16     // No SIGPIPE generated when an attempt to send is made on a stream-oriented socket that is no longer connected
-#define MSG_PEEK 32         // Leave received data in queue
-#define MSG_TRUNC 64        // Normal data truncated
-#define MSG_WAITALL 128     // Attempt to fill the read buffer
+#define MSG_PEEK 16         // Leave received data in queue
+#define MSG_TRUNC 32        // Normal data truncated
+#define MSG_WAITALL 64      // Attempt to fill the read buffer
+#define MSG_DONTWAIT 128    // Noblocking io
 
 typedef uint8_t socklen_t;
 typedef uint8_t sa_family_t;
@@ -65,6 +65,7 @@ struct sockaddr {
 
 struct sockaddr_storage {
     sa_family_t ss_family;
+    char data[6];
 };
 
 struct msghdr {
@@ -105,16 +106,16 @@ struct socket {
 };
 
 struct sock_ap_pairs_s {
-    in_addr_t my_addr;     // my address
-    in_addr_t fe_addr;     // foreign address
-    in_port_t my_port;     // my port
-    in_port_t fe_port;     // foreign port
+    in_addr_t loc_addr; // local address
+    in_addr_t fe_addr;  // foreign address
+    in_port_t loc_port;  // local port
+    in_port_t fe_port;  // foreign port
 };
 
 void socket_list_init(void);
 
 void socket_set_hash(struct socket *sk);
-struct socket *socket_find(struct sock_ap_pairs_s *pairs, uint8_t prot);
+struct socket *socket_find(struct sock_ap_pairs_s *pairs);
 
 struct socket *accept(struct socket *restrict sk,
                       struct sockaddr *restrict addr,

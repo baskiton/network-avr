@@ -61,23 +61,22 @@ static void socket_list_del(struct socket *entry) {
 void socket_set_hash(struct socket *sk) {
     struct sock_ap_pairs_s pairs;
 
-    pairs.my_addr = sk->src_addr;
-    pairs.my_port = sk->src_port;
+    pairs.loc_addr = sk->src_addr;
+    pairs.loc_port = sk->src_port;
     pairs.fe_addr = sk->dst_addr;
     pairs.fe_port = sk->dst_port;
 
-    sk->sk_hash = sock_hash_calc(&pairs, sk->protocol);
+    sk->sk_hash = sock_hash_calc(&pairs);
 }
 
 /*!
  * @brief Search mounted socket by the hash sum
  * @param pairs Port-addr pairs
- * @param prot Protocol
  * @return Founded socket or NULL on failed
  */
-struct socket *socket_find(struct sock_ap_pairs_s *pairs, uint8_t prot) {
+struct socket *socket_find(struct sock_ap_pairs_s *pairs) {
     struct socket *sk;
-    uint32_t hash = sock_hash_calc(pairs, prot);
+    uint32_t hash = sock_hash_calc(pairs);
 
     socket_list_for_each(sk) {
         if (sk->sk_hash == hash)
@@ -178,8 +177,8 @@ ssize_t recv(struct socket *restrict sk,
  * @param buff Buffer to receive data
  * @param buff_size Size of \p buff
  * @param flags Flags (MSG_PEEK, MSG_OOB, MSG_WAITALL)
- * @param addr Pointer to socket address structure
- * @param addr_len Length of \p addr
+ * @param addr Pointer to socket address structure to store
+ * @param addr_len Length of \p addr to store
  * @return Number of received bytes or -1 for error
  */
 ssize_t recvfrom(struct socket *restrict sk,
@@ -192,6 +191,7 @@ ssize_t recvfrom(struct socket *restrict sk,
     ssize_t ret;
     struct msghdr msg;
     struct iovec iov;
+    struct sockaddr_storage stor_addr;
 
     if (!sk) {
         // ENOTSOCK
@@ -200,13 +200,18 @@ ssize_t recvfrom(struct socket *restrict sk,
 
     iovec_import(&iov, (void *)buff, buff_size);
 
-    msg.msg_name = addr;
+    msg.msg_name = addr ? &stor_addr : NULL;
     msg.msg_namelen = 0;
     msg.msg_flags = 0;
     msg.msg_iov = &iov;
 
     rcv_msg_f = pgm_read_ptr(&sk->p_ops->recvmsg);
     ret = rcv_msg_f(sk, &msg, flags);   // recvmsg()
+
+    if (ret >= 0 && addr) {
+        memcpy(addr, &stor_addr, msg.msg_namelen);
+        *addr_len = msg.msg_namelen;
+    }
 
     return ret;
 }

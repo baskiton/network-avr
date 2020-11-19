@@ -30,18 +30,18 @@ static int8_t ip_common_recv(struct net_buff_s *nb) {
     void *transp_hdr = nb->head + nb->transport_hdr_offset;
     struct ip_hdr_s *iph = get_ip_hdr(nb);
     struct sock_ap_pairs_s pairs = {
-        .my_addr = iph->ip_dst,
+        .loc_addr = iph->ip_dst,
         .fe_addr = iph->ip_src,
     };
 
     switch (iph->protocol) {
         case IPPROTO_TCP:
-            pairs.my_port = ((struct tcp_hdr_s *)transp_hdr)->port_dst;
+            pairs.loc_port = ((struct tcp_hdr_s *)transp_hdr)->port_dst;
             pairs.fe_port = ((struct tcp_hdr_s *)transp_hdr)->port_src;
             break;
         
         case IPPROTO_UDP:
-            pairs.my_port = ((struct udp_hdr_s *)transp_hdr)->port_dst;
+            pairs.loc_port = ((struct udp_hdr_s *)transp_hdr)->port_dst;
             pairs.fe_port = ((struct udp_hdr_s *)transp_hdr)->port_src;
             break;
         
@@ -49,7 +49,7 @@ static int8_t ip_common_recv(struct net_buff_s *nb) {
             goto drop;
     }
 
-    sk = socket_find(&pairs, iph->protocol);
+    sk = socket_find(&pairs);
     if (sk) {
         nb_enqueue(nb, &sk->nb_rx_q);
         return NETDEV_RX_SUCCESS;

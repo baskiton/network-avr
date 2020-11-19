@@ -37,17 +37,12 @@ out:
 /*!
  * @brief Calculate Hash for socket port-addr pairs
  * @param pairs Port-Addr pairs
- * @param prot Protocol
  * @return 32-bit hash sum
  */
-uint32_t sock_hash_calc(struct sock_ap_pairs_s *pairs, uint8_t prot) {
+uint32_t sock_hash_calc(struct sock_ap_pairs_s *pairs) {
     uint8_t *key = (void *)pairs;
     uint32_t hash;
     uint8_t i;
-
-    if (prot == IPPROTO_ICMP) {
-        pairs->fe_port = pairs->my_port = 0x0CAD;
-    }
 
     /* Jenkins one-at-a-time hash */
     for (hash = i = 0; i < sizeof(*pairs); i++) {

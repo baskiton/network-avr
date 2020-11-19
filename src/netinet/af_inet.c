@@ -33,13 +33,13 @@ uint16_t inet_get_port(void) {
  */
 static int8_t inet_release(struct socket *sk) {
     switch (sk->protocol) {
+        case IPPROTO_ICMP:
+            /* code */
+            break;
         case IPPROTO_TCP:
             /* code */
             break;
         case IPPROTO_UDP:
-            /* code */
-            break;
-        case IPPROTO_ICMP:
             /* code */
             break;
         case IPPROTO_RAW:
@@ -86,20 +86,22 @@ static int8_t inet_bind(struct socket *sk,
         if ((addr_in->sin_family != AF_UNSPEC) ||
             (addr_in->sin_addr.s_addr != htonl(INADDR_ANY))) {
             // EAFNOSUPPORT
-            err = -1;
             goto out;
         }
     }
 
-    if (sk->src_port)
-        /** TODO: get port number automaticly */
-        goto out;
+    if (addr_in->sin_port)
+        addr_in->sin_port = inet_get_port();
 
     sk->src_addr = addr_in->sin_addr.s_addr;
+    sk->src_port = addr_in->sin_port;
     sk->dst_addr = 0;
-    sk->src_port = htons(addr_in->sin_port);
     sk->dst_port = 0;
     err = 0;
+
+    /* calculate and set addr-port hash in socket */
+    socket_set_hash(sk);
+
 out:
     return err;
 }
@@ -115,12 +117,12 @@ static ssize_t inet_sendmsg(struct socket *restrict sk,
         sk->src_port = inet_get_port();
 
     switch (sk->protocol) {
+        case IPPROTO_ICMP:
+            return ping_send_msg(sk, msg);
         case IPPROTO_TCP:
             return tcp_send_msg(sk, msg);
         case IPPROTO_UDP:
             return udp_send_msg(sk, msg);
-        case IPPROTO_ICMP:
-            return ping_send_msg(sk, msg);
         // case IPPROTO_RAW:
         //     return 0;
         
@@ -136,8 +138,22 @@ static ssize_t inet_sendmsg(struct socket *restrict sk,
 static ssize_t inet_recvmsg(struct socket *restrict sk,
                             struct msghdr *restrict msg,
                             uint8_t flags) {
+    socklen_t addr_len = 0;
+    ssize_t ret = -1;
 
-    return -1;
+    switch (sk->protocol) {
+        case IPPROTO_ICMP:
+            ret = ping_recv_msg(sk, msg, flags, &addr_len);
+            break;
+        
+        default:
+            break;
+    }
+
+    if (ret >= 0)
+        msg->msg_namelen = addr_len;
+
+    return ret;
 }
 
 /** TODO: */
