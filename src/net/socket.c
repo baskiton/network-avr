@@ -310,6 +310,35 @@ ssize_t sendmsg(struct socket *sk,
 }
 
 /*!
+ * @brief Set the socket options
+ * @param sk Socket
+ * @param level Protocol level (or SOL_SOCKET for common)
+ * @param option_name Option (e.g. SO_RCVTIMEO)
+ * @param option_value Pointer to the option value
+ * @param option_len Length of \c option_value
+ * @return 0 on success
+ */
+int8_t setsockopt(struct socket *sk, uint8_t level, uint8_t option_name,
+                  const void *option_value, socklen_t option_len) {
+    if (level == SOL_SOCKET)
+        // EINVAL
+        return -1;
+
+    switch (option_name) {
+        case SO_RCVTIMEO:
+            /** TODO: */
+            // sk->rcv_timeout = (F_CPU * 1000000) / (sec * 1000000 + usec);
+            sk->rcv_timeout = (F_CPU * 1000000) / ((uint8_t)option_value * 1000000);
+            
+            return 0;
+        
+        default:
+            // ENOPROTOOPT
+            return -1;
+    }
+}
+
+/*!
  * @brief Shut down all or part of the connection open on socket FD
  * @param sk Pointer to socket
  * @param how Determines what to shut down:

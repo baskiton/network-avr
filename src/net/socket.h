@@ -46,6 +46,28 @@
 #define MSG_WAITALL 64      // Attempt to fill the read buffer
 #define MSG_DONTWAIT 128    // Noblocking io
 
+/* Socket settings */
+#define SOL_SOCKET 1    // Options to be accessed at socket level, not protocol level.
+
+#define SO_RCVTIMEO 11  // (struct timeval) Receive timeout
+/** TODO: not support at this time
+#define SO_ACCEPTCONN 1 // (int) Socket is accepting connections (getsockopt() only)
+#define SO_BROADCAST 2  // (int) Transmission of broadcast messages is supported (SOCK_DGRAM sockets only)
+#define SO_DEBUG 3      // (int) Debugging information is being recorded
+#define SO_DONTROUTE 4  // (int) Bypass normal routing
+#define SO_ERROR 5      // (int) Socket error status (getsockopt() only)
+#define SO_KEEPALIVE 6  // (int) Connections are kept alive with periodic messages (protocol-specific)
+#define SO_LINGER 7     // (struct linger) Socket lingers on close
+#define SO_OOBINLINE 8  // (int) Out-of-band data is transmitted in line
+#define SO_RCVBUF 9     // (int) Receive buffer size (in bytes)
+#define SO_RCVLOWAT 10  // (int) Receive "low water mark" (in bytes)
+#define SO_REUSEADDR 12 // (int) Reuse of local addresses is supported (protocol-specific)
+#define SO_SNDBUF 13    // (int) Send buffer size (in bytes)
+#define SO_SNDLOWAT 14  // (int) Send "low water mark" (in bytes)
+#define SO_SNDTIMEO 15  // (struct timeval) Send timeout
+#define SO_TYPE 16      // (int) Socket type (getsockopt() only)
+// */
+
 typedef uint8_t socklen_t;
 typedef uint8_t sa_family_t;
 
@@ -98,6 +120,9 @@ struct socket {
 
     uint8_t protocol;
 
+    /* socket options */
+    uint32_t rcv_timeout;   // Receive Timeout setting SO_RCVTIMEO
+
     struct nb_queue_s nb_tx_q;  // transmit queue
     struct nb_queue_s nb_rx_q;  // receive queue
 
@@ -148,6 +173,8 @@ ssize_t sendto(struct socket *sk,
 ssize_t sendmsg(struct socket *sk,
                 const struct msghdr *message,
                 uint8_t flags);
+int8_t setsockopt(struct socket *sk, uint8_t level, uint8_t option_name,
+                  const void *option_value, socklen_t option_len);
 int8_t shutdown(struct socket *sk, uint8_t how);
 struct socket *socket(uint8_t family, uint8_t type, uint8_t protocol);
 void sock_close(struct socket **sk);
