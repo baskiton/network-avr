@@ -110,19 +110,19 @@ void network_init(void) {
 
 /*!
  * @brief Get the net buffer from receive socket queue, wait if empty
- * @param q Queue
+ * @param sk Socket
  * @param flags Flags
  * @return Pointer to buffer or \c NULL if error
  */
-struct net_buff_s *net_buff_rcv(struct nb_queue_s *q, uint8_t flags) {
+struct net_buff_s *net_buff_rcv(struct socket *sk, uint8_t flags) {
     struct net_buff_s *nb = NULL;
     uint32_t timeout;
 
     /** TODO: implement the timeout! */
-    timeout = (flags & MSG_DONTWAIT) ? 0 : (F_CPU / 20);
+    timeout = (flags & MSG_DONTWAIT) ? 0 : (sk->rcv_timeout / 40);  // 40 is coef
 
     do {
-        nb = nb_dequeue(q);
+        nb = nb_dequeue(&sk->nb_rx_q);
         if (nb)
             return nb;
         _delay_us(0);

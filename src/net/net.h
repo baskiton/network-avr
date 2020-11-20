@@ -118,7 +118,7 @@ struct net_buff_s {
 
 typedef int8_t (*proto_hdlr_t)(struct net_buff_s *net_buff);
 
-struct net_buff_s *net_buff_rcv(struct nb_queue_s *q, uint8_t flags);
+struct net_buff_s *net_buff_rcv(struct socket *sk, uint8_t flags);
 
 struct net_buff_s *net_buff_alloc(uint16_t size);
 struct net_buff_s *ndev_alloc_net_buff(struct net_dev_s *net_dev, uint16_t size);

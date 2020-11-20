@@ -89,7 +89,7 @@ ssize_t ping_recv_msg(struct socket *restrict sk,
         // EOPNOTSUPP
         return -1;
 
-    nb = net_buff_rcv(&sk->nb_rx_q, flags);
+    nb = net_buff_rcv(sk, flags);
     if (!nb)
         return -1;
 
