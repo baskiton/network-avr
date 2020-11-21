@@ -199,24 +199,6 @@ static inline void nb_queue_clear(struct nb_queue_s *q) {
 }
 
 /*!
- * @brief Dump the queue by printing the addresses of its elements.
- * @param q Queue to dump
- */
-static inline void nb_queue_dump(struct nb_queue_s *q) {
-    struct net_buff_s *entry = q->next;
-
-    putchar('[');
-
-    while (entry != (struct net_buff_s *)q) {
-        printf_P(PSTR("%p, "), entry);
-        entry = entry->next;
-    }
-
-    putchar(']');
-    putchar('\n');
-}
-
-/*!
  * @brief Check if queue is empty
  * @param q Queue
  * @return True if the queue is empty

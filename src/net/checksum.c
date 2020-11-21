@@ -2,7 +2,6 @@
 
 #include "net/checksum.h"
 #include "net/socket.h"
-#include "netinet/in.h"
 
 /*!
  * @brief Compute Internet Checksum.
@@ -45,7 +44,7 @@ uint32_t sock_hash_calc(struct sock_ap_pairs_s *pairs) {
     uint8_t i;
 
     /* Jenkins one-at-a-time hash */
-    for (hash = i = 0; i < sizeof(*pairs); i++) {
+    for (hash = i = 0; i < (uint8_t)sizeof(*pairs); i++) {
         hash += key[i];
         hash += (hash << 10);
         hash ^= (hash >> 6);

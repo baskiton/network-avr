@@ -320,7 +320,7 @@ ssize_t sendmsg(struct socket *sk,
  */
 int8_t setsockopt(struct socket *sk, uint8_t level, uint8_t option_name,
                   const void *option_value, socklen_t option_len) {
-    if (level == SOL_SOCKET)
+    if (level != SOL_SOCKET)
         // EINVAL
         return -1;
 
@@ -328,9 +328,10 @@ int8_t setsockopt(struct socket *sk, uint8_t level, uint8_t option_name,
         case SO_RCVTIMEO:
             /** TODO: */
             // sk->rcv_timeout = (F_CPU * 1000000) / (sec * 1000000 + usec);
-            sk->rcv_timeout = (F_CPU * 1000000) / ((uint8_t)option_value * 1000000);
-            
-            return 0;
+            sk->rcv_timeout = (((int64_t)F_CPU * 1000000) /
+                               (*(uint8_t *)option_value * 1000000));
+
+        return 0;
         
         default:
             // ENOPROTOOPT
@@ -413,14 +414,14 @@ struct socket *socket(uint8_t family, uint8_t type, uint8_t protocol) {
             err = -1;
             break;
     }
-    if (err){
+
+    if (err) {
         free(sock);
-        sock = NULL;
-        goto out;
+        return NULL;
     }
 
     socket_list_add(sock);
-out:
+
     return sock;
 }
 

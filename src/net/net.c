@@ -115,18 +115,17 @@ void network_init(void) {
  * @return Pointer to buffer or \c NULL if error
  */
 struct net_buff_s *net_buff_rcv(struct socket *sk, uint8_t flags) {
-    struct net_buff_s *nb = NULL;
-    uint32_t timeout;
+    struct net_buff_s *nb;
+    int32_t timeout;
 
-    /** TODO: implement the timeout! */
-    timeout = (flags & MSG_DONTWAIT) ? 0 : (sk->rcv_timeout / 40);  // 40 is coef
+    timeout = (flags & MSG_DONTWAIT) ? 0 : sk->rcv_timeout;
 
     do {
         nb = nb_dequeue(&sk->nb_rx_q);
         if (nb)
             return nb;
         _delay_us(0);
-    } while (timeout--);
+    } while ((timeout -= 45) > 0);  // 45 is empirical value
 
     return NULL;
 }

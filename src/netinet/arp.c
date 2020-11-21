@@ -58,24 +58,25 @@ int8_t arp_lookup(const in_addr_t *next_hop,
         memcpy_P(mac_dest, eth_mcast_mac, ETH_MAC_LEN);
     else {  // unicast
         uint8_t *mac = arp_tbl_get(next_hop);
-        if (mac)
-            memcpy(mac_dest, mac, ETH_MAC_LEN);
-        else {  // not in table. send ARP request
+
+        if (!mac) {  // not in table. send ARP request
             arp_send(ndev, ARP_OP_REQ, ETH_P_IP, NULL,
                      ndev->dev_addr, src_ip, NULL, next_hop);
 
             /* waiting for ARP-reply */
-            for (uint32_t i = F_CPU / 20; !mac && i; i--) {
+            for (uint32_t i = F_CPU / 45; !mac && i; i--) {
                 mac = arp_tbl_get(next_hop);
                 _delay_us(0);
             }
 
-            if (!mac)
+            if (!mac) {
                 // times out
+                // EHOSTUNREACH
                 return -1;
-
-            memcpy(mac_dest, mac, ETH_MAC_LEN);
+            }
         }
+
+        memcpy(mac_dest, mac, ETH_MAC_LEN);
     }
 
     return 0;

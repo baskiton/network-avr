@@ -121,7 +121,8 @@ struct socket {
     uint8_t protocol;
 
     /* socket options */
-    uint32_t rcv_timeout;   // Receive Timeout setting SO_RCVTIMEO
+    int32_t rcv_timeout;   // Receive Timeout setting SO_RCVTIMEO
+    int32_t tx_timeout;
 
     struct nb_queue_s nb_tx_q;  // transmit queue
     struct nb_queue_s nb_rx_q;  // receive queue
