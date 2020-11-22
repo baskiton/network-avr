@@ -18,9 +18,8 @@
         }
     ],
     "license": "MIT",
-    "frameworks": ["arduino"],
     "platforms": ["atmelavr"],
     "dependencies": {
-        "defines-avr": "^1.2.0"
+        "defines-avr": "^1.2.1"
     }
 }
