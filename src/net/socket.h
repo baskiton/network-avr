@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <limits.h>
 
 /* Address Families */
 #define AF_UNSPEC 0 // Unspecified
@@ -67,6 +68,8 @@
 #define SO_SNDTIMEO 15  // (struct timeval) Send timeout
 #define SO_TYPE 16      // (int) Socket type (getsockopt() only)
 // */
+
+#define MAX_TIMEOUT INT32_MAX
 
 typedef uint8_t socklen_t;
 typedef uint8_t sa_family_t;

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "net/net.h"
 #include "net/net_dev.h"
@@ -108,6 +109,15 @@ void network_init(void) {
     inet_init();
 }
 
+static inline bool timeout_process(int32_t *t_o) {
+    if (*t_o == MAX_TIMEOUT)
+        return true;
+
+    *t_o -= 51; // 51 is empirical value
+
+    return (*t_o > 0) ? true : false;
+}
+
 /*!
  * @brief Get the net buffer from receive socket queue, wait if empty
  * @param sk Socket
@@ -125,7 +135,7 @@ struct net_buff_s *net_buff_rcv(struct socket *sk, uint8_t flags) {
         if (nb)
             return nb;
         _delay_us(0);
-    } while ((timeout -= 45) > 0);  // 45 is empirical value
+    } while (timeout_process(&timeout));
 
     return NULL;
 }

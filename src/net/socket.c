@@ -327,9 +327,8 @@ int8_t setsockopt(struct socket *sk, uint8_t level, uint8_t option_name,
     switch (option_name) {
         case SO_RCVTIMEO:
             /** TODO: */
-            // sk->rcv_timeout = (F_CPU * 1000000) / (sec * 1000000 + usec);
-            sk->rcv_timeout = (((int64_t)F_CPU * 1000000) /
-                               (*(uint8_t *)option_value * 1000000));
+            // sk->rcv_timeout = (((int64_t)F_CPU * sec + ((F_CPU / 1000000) * usec));
+            sk->rcv_timeout = (*(uint8_t *)option_value * (int64_t)F_CPU);
 
         return 0;
         
