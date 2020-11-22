@@ -145,6 +145,10 @@ static ssize_t inet_recvmsg(struct socket *restrict sk,
         case IPPROTO_ICMP:
             ret = ping_recv_msg(sk, msg, flags, &addr_len);
             break;
+
+        case IPPROTO_UDP:
+            ret = udp_recv_msg(sk, msg, flags, &addr_len);
+            break;
         
         default:
             break;
@@ -226,6 +230,8 @@ int8_t inet_sock_create(struct socket *sk, uint8_t protocol) {
 
     sk->protocol = protocol;
     sk->state = SS_UNCONNECTED;
+    sk->rcv_timeout = MAX_TIMEOUT;
+    sk->tx_timeout = MAX_TIMEOUT;
 
     nb_queue_init(&sk->nb_tx_q);
     nb_queue_init(&sk->nb_rx_q);

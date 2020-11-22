@@ -24,5 +24,8 @@ static inline struct udp_hdr_s *get_udp_hdr(struct net_buff_s *nb) {
 
 ssize_t udp_send_msg(struct socket *restrict sk,
                      struct msghdr *restrict msg);
+ssize_t udp_recv_msg(struct socket *restrict sk,
+                     struct msghdr *restrict msg,
+                     int8_t flags, socklen_t *restrict addr_len);
 
 #endif  /* !NETINET_UDP_H */

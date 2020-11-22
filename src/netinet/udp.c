@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "net/net.h"
 #include "net/socket.h"
 #include "netinet/in.h"
@@ -75,4 +77,50 @@ ssize_t udp_send_msg(struct socket *restrict sk,
     }
 
     return msg->msg_iov->iov_len;
+}
+
+/*!
+ *
+ */
+ssize_t udp_recv_msg(struct socket *restrict sk,
+                     struct msghdr *restrict msg,
+                     int8_t flags, socklen_t *restrict addr_len) {
+    struct net_buff_s *nb;
+    size_t max_len = msg->msg_iov->iov_len;
+    size_t len;
+    struct sockaddr_in *addr = msg->msg_name;
+    void *from;
+    struct udp_hdr_s *udph;
+
+    if (!max_len)
+        return(0);
+
+    nb = net_buff_rcv(sk, flags);
+    if (!nb)
+        return -1;
+
+    udph = get_udp_hdr(nb);
+
+    from = udph + 1;
+    len = udph->len - sizeof(*udph);
+
+    if (len > max_len)
+        /** TODO: truncate */
+        len = max_len;
+
+    /** TODO: validate checksum! */
+
+    memcpy(msg->msg_iov->iov_base, from, len);
+
+    /* copy address */
+    if (addr) {
+        addr->sin_family = AF_INET;
+        addr->sin_port = udph->port_src;
+        addr->sin_addr.s_addr = get_ip_hdr(nb)->ip_src;
+        *addr_len = sizeof(*addr);
+    }
+
+    free_net_buff(nb);
+
+    return len;
 }
