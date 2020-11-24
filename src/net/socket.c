@@ -12,11 +12,41 @@
 extern int8_t inet_sock_create(struct socket *sk, uint8_t protocol);
 extern void nb_queue_clear(struct nb_queue_s *q);
 
-/* List of sockets */
-struct socket *socket_list;
-
+/*!
+ * @brief Init socket list
+ */
 void socket_list_init(void) {
-    socket_list->next = socket_list->prev = NULL;
+    // socket_list->next = socket_list->prev = NULL;
+    socket_list.icmp = NULL;
+    socket_list.tcp = NULL;
+    socket_list.udp = NULL;
+}
+
+/*!
+ * @brief Get protocol specified socket list
+ * @param proto Protocol (e.g. IPPROTO_TCP)
+ * @return Socket list
+ */
+struct socket *get_socket_list(uint8_t proto) {
+    struct socket *list;
+
+    switch (proto) {
+        case IPPROTO_ICMP:
+            list = socket_list.icmp;
+            break;
+        case IPPROTO_TCP:
+            list = socket_list.tcp;
+            break;
+        case IPPROTO_UDP:
+            list = socket_list.udp;
+            break;
+        
+        default:    // unreach in theory, but...
+            list = NULL;
+            break;
+    }
+
+    return list;
 }
 
 /*!
@@ -24,14 +54,16 @@ void socket_list_init(void) {
  * @param new New entry to be added
  */
 static void socket_list_add(struct socket *new) {
-    if (!socket_list) {
+    struct socket *list = get_socket_list(new->protocol);
+
+    if (!list) {
         new->next = NULL;
     } else {
-        socket_list->prev = new;
-        new->next = socket_list;
+        list->prev = new;
+        new->next = list;
     }
-    socket_list = new;
-    socket_list->prev = NULL;
+    list = new;
+    list->prev = NULL;
 }
 
 /*!
@@ -39,20 +71,15 @@ static void socket_list_add(struct socket *new) {
  * @param entry Socket to delete
  */
 static void socket_list_del(struct socket *entry) {
+    struct socket *list = get_socket_list(entry->protocol);
+
     if (entry->next)
         entry->next->prev = entry->prev;
     if (entry->prev)
         entry->prev->next = entry->next;
     else
-        socket_list = entry->next;
+        *&list = entry->next;
 }
-
-/*!
- * @brief Iterate over a socket list
- * @param i socket struct to iterate
- */
-#define socket_list_for_each(i)   \
-        for (i = socket_list; i; i = i->next)
 
 /*!
  * @brief Set port-addr hash sum
@@ -65,6 +92,7 @@ void socket_set_hash(struct socket *sk) {
     pairs.loc_port = sk->src_port;
     pairs.fe_addr = sk->dst_addr;
     pairs.fe_port = sk->dst_port;
+    pairs.proto = sk->protocol;
 
     sk->sk_hash = sock_hash_calc(&pairs);
 }
@@ -78,7 +106,7 @@ struct socket *socket_find(struct sock_ap_pairs_s *pairs) {
     struct socket *sk;
     uint32_t hash = sock_hash_calc(pairs);
 
-    socket_list_for_each(sk) {
+    socket_list_for_each(sk, pairs->proto) {
         if (sk->sk_hash == hash)
             break;
     }
@@ -115,7 +143,7 @@ int8_t bind(struct socket *sk,
     int8_t err = -1;
     int8_t (*bind_f)(struct socket *, const struct sockaddr *, uint8_t);
 
-    if (sk) {
+    if (sk && addr && (addr_len > 0)) {
         bind_f = pgm_read_ptr(&sk->p_ops->bind);
         if (bind_f)
             err = bind_f(sk, addr, addr_len);   // bind()

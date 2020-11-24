@@ -134,12 +134,29 @@ struct socket {
                   *next;    // next socket in list
 };
 
-struct sock_ap_pairs_s {
+struct __attribute__((packed)) sock_ap_pairs_s {
     in_addr_t loc_addr; // local address
     in_addr_t fe_addr;  // foreign address
-    in_port_t loc_port;  // local port
+    in_port_t loc_port; // local port
     in_port_t fe_port;  // foreign port
+    uint8_t proto;      // protocol
 };
+
+/* List of sockets */
+struct {
+    struct socket *icmp;
+    struct socket *tcp;
+    struct socket *udp;
+} socket_list;
+
+struct socket *get_socket_list(uint8_t proto);
+
+/*!
+ * @brief Iterate over a socket list
+ * @param i socket struct to iterate
+ */
+#define socket_list_for_each(i, proto)  \
+        for (i = get_socket_list(proto); i; i = i->next)
 
 void socket_list_init(void);
 

@@ -18,12 +18,11 @@ static struct ip_proto_hdlr_ops_s ip_proto_ops = {
 
 /*!
  * @brief Handler for IPv4
- * @param proto IP number
  * @param net_buff Pointer to receive net buffer
  * @return 0 if success; 1 if drop
  */
-int8_t ip_proto_handler(uint8_t proto, struct net_buff_s *net_buff) {
-    switch (proto) {
+int8_t ip_proto_handler(struct net_buff_s *net_buff) {
+    switch (get_ip_hdr(net_buff)->protocol) {
         case IPPROTO_ICMP:
             if (ip_proto_ops.icmp) {
                 return ip_proto_ops.icmp(net_buff);

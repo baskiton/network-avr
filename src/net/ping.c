@@ -121,21 +121,15 @@ ssize_t ping_recv_msg(struct socket *restrict sk,
  */
 bool ping_rcv(struct net_buff_s *nb) {
     struct socket *sk;
-    struct ip_hdr_s *iph = get_ip_hdr(nb);
-    struct icmp_hdr_s *icmph = get_icmp_hdr(nb);
-    struct sock_ap_pairs_s pairs = {
-        .loc_addr = iph->ip_dst,
-        .loc_port = icmph->hdr_data.echo.id,
-        .fe_addr = iph->ip_src,
-        .fe_port = 0,
-    };
 
-    sk = socket_find(&pairs);
-    if (!sk)
-        return false;
+    socket_list_for_each(sk, IPPROTO_ICMP) {
+        /* In fact, it is enough to verify only the local port and local IP */
+        if ((sk->src_port == get_icmp_hdr(nb)->hdr_data.echo.id) &&
+            (sk->src_addr == get_ip_hdr(nb)->ip_dst)) {
+            nb_enqueue(nb, &sk->nb_rx_q);
+            return true;
+        }
+    }
 
-    nb_enqueue(nb, &sk->nb_rx_q);
-
-    return true;
-
+    return false;
 }

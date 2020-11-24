@@ -27,7 +27,6 @@ struct ip_hdr_s *get_ip_hdr(struct net_buff_s *net_buff) {
  */
 static int8_t ip_common_recv(struct net_buff_s *nb) {
     struct socket *sk;
-    void *transp_hdr = nb->head + nb->transport_hdr_offset;
     struct ip_hdr_s *iph = get_ip_hdr(nb);
     struct sock_ap_pairs_s pairs = {
         .loc_addr = iph->ip_dst,
@@ -36,13 +35,15 @@ static int8_t ip_common_recv(struct net_buff_s *nb) {
 
     switch (iph->protocol) {
         case IPPROTO_TCP:
-            pairs.loc_port = ((struct tcp_hdr_s *)transp_hdr)->port_dst;
-            pairs.fe_port = ((struct tcp_hdr_s *)transp_hdr)->port_src;
+            pairs.loc_port = get_tcp_hdr(nb)->port_dst;
+            pairs.fe_port =  get_tcp_hdr(nb)->port_src;
+            pairs.proto = IPPROTO_TCP;
             break;
         
         case IPPROTO_UDP:
-            pairs.loc_port = ((struct udp_hdr_s *)transp_hdr)->port_dst;
-            pairs.fe_port = ((struct udp_hdr_s *)transp_hdr)->port_src;
+            pairs.loc_port =  get_udp_hdr(nb)->port_dst;
+            pairs.fe_port =  get_udp_hdr(nb)->port_src;
+            pairs.proto = IPPROTO_UDP;
             break;
         
         default:    // unreach in theory
@@ -53,6 +54,22 @@ static int8_t ip_common_recv(struct net_buff_s *nb) {
     if (sk) {
         nb_enqueue(nb, &sk->nb_rx_q);
         return NETDEV_RX_SUCCESS;
+    }
+
+    socket_list_for_each(sk, iph->protocol) {
+        if (sk->src_port != pairs.loc_port)
+            continue;
+        if (sk->src_addr != iph->ip_dst)
+            continue;
+        if (sk->dst_addr){
+            if (sk->dst_addr != iph->ip_src)
+                /** TODO: check if addr is 0.0.0.0 or bcast */
+                continue;
+        }
+        if (sk->dst_port) {
+            if (sk->dst_port != pairs.fe_port)
+                continue;
+        }
     }
 
 drop:
@@ -98,7 +115,7 @@ static int8_t ip_recv(struct net_buff_s *nb) {
     if (iph->ihl > 5)
         goto out;
 
-    return ip_proto_handler(iph->protocol, nb);
+    return ip_proto_handler(nb);
 
 out:
     free_net_buff(nb);
@@ -145,8 +162,10 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
     ndev = curr_net_dev;
     sk->src_addr = my_ip;
 
-    /* calculate and set addr-port hash in socket */
-    socket_set_hash(sk);
+    /* If set, then the address has been changed
+     * and need to update the hash sum. */
+    if (msg->msg_name)
+        socket_set_hash(sk);
 
     /* create net buffer */
     nb = ndev_alloc_net_buff(ndev, pkt_len);

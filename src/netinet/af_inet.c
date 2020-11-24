@@ -90,7 +90,7 @@ static int8_t inet_bind(struct socket *sk,
         }
     }
 
-    if (addr_in->sin_port)
+    if (!addr_in->sin_port)
         addr_in->sin_port = inet_get_port();
 
     sk->src_addr = addr_in->sin_addr.s_addr;
