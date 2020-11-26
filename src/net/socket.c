@@ -27,18 +27,18 @@ void socket_list_init(void) {
  * @param proto Protocol (e.g. IPPROTO_TCP)
  * @return Socket list
  */
-struct socket *get_socket_list(uint8_t proto) {
-    struct socket *list;
+struct socket **get_socket_list(uint8_t proto) {
+    struct socket **list;
 
     switch (proto) {
         case IPPROTO_ICMP:
-            list = socket_list.icmp;
+            list = &socket_list.icmp;
             break;
         case IPPROTO_TCP:
-            list = socket_list.tcp;
+            list = &socket_list.tcp;
             break;
         case IPPROTO_UDP:
-            list = socket_list.udp;
+            list = &socket_list.udp;
             break;
         
         default:    // unreach in theory, but...
@@ -54,16 +54,16 @@ struct socket *get_socket_list(uint8_t proto) {
  * @param new New entry to be added
  */
 static void socket_list_add(struct socket *new) {
-    struct socket *list = get_socket_list(new->protocol);
+    struct socket **list = get_socket_list(new->protocol);
 
-    if (!list) {
+    if (!*list) {
         new->next = NULL;
     } else {
-        list->prev = new;
-        new->next = list;
+        (*list)->prev = new;
+        new->next = *list;
     }
-    list = new;
-    list->prev = NULL;
+    *list = new;
+    (*list)->prev = NULL;
 }
 
 /*!
@@ -71,47 +71,14 @@ static void socket_list_add(struct socket *new) {
  * @param entry Socket to delete
  */
 static void socket_list_del(struct socket *entry) {
-    struct socket *list = get_socket_list(entry->protocol);
+    struct socket **list = get_socket_list(entry->protocol);
 
     if (entry->next)
         entry->next->prev = entry->prev;
     if (entry->prev)
         entry->prev->next = entry->next;
     else
-        *&list = entry->next;
-}
-
-/*!
- * @brief Set port-addr hash sum
- * @param sk Socket
- */
-void socket_set_hash(struct socket *sk) {
-    struct sock_ap_pairs_s pairs;
-
-    pairs.loc_addr = sk->src_addr;
-    pairs.loc_port = sk->src_port;
-    pairs.fe_addr = sk->dst_addr;
-    pairs.fe_port = sk->dst_port;
-    pairs.proto = sk->protocol;
-
-    sk->sk_hash = sock_hash_calc(&pairs);
-}
-
-/*!
- * @brief Search mounted socket by the hash sum
- * @param pairs Port-addr pairs
- * @return Founded socket or NULL on failed
- */
-struct socket *socket_find(struct sock_ap_pairs_s *pairs) {
-    struct socket *sk;
-    uint32_t hash = sock_hash_calc(pairs);
-
-    socket_list_for_each(sk, pairs->proto) {
-        if (sk->sk_hash == hash)
-            break;
-    }
-
-    return sk;
+        *list = entry->next;
 }
 
 /*!

@@ -34,18 +34,18 @@ out:
 }
 
 /*!
- * @brief Calculate Hash for socket port-addr pairs
- * @param pairs Port-Addr pairs
+ * @brief Calculate Hash Sum
+ * @param data Data buffer
+ * @param len Length of data
  * @return 32-bit hash sum
  */
-uint32_t sock_hash_calc(struct sock_ap_pairs_s *pairs) {
-    uint8_t *key = (void *)pairs;
+uint32_t jenkins_hash_calc(void *data, uint8_t len) {
     uint32_t hash;
     uint8_t i;
 
     /* Jenkins one-at-a-time hash */
-    for (hash = i = 0; i < (uint8_t)sizeof(*pairs); i++) {
-        hash += key[i];
+    for (hash = i = 0; i < len; i++) {
+        hash += ((uint8_t *)data)[i];
         hash += (hash << 10);
         hash ^= (hash >> 6);
     }

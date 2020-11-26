@@ -84,8 +84,14 @@ in_addr_t inet_addr(const char *cp) {
  */
 char *inet_ntoa(struct in_addr in) {
     /** TODO: */
+    static char tmp[16];
 
-    return NULL;
+    memset(tmp, 0, 16);
+
+    if (!inet_ntop(AF_INET, &in, tmp, 16))
+        return NULL;
+
+    return tmp;
 }
 
 /*!

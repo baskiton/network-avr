@@ -99,9 +99,6 @@ static int8_t inet_bind(struct socket *sk,
     sk->dst_port = 0;
     err = 0;
 
-    /* calculate and set addr-port hash in socket */
-    socket_set_hash(sk);
-
 out:
     return err;
 }

@@ -101,7 +101,8 @@ void ip_init(void);
 struct net_buff_s *ip_create_nb(struct socket *sk,
                                 struct msghdr *msg,
                                 uint8_t t_hdr_len,
-                                size_t len);
+                                size_t len,
+                                struct sockaddr_in *daddr);
 int8_t ip_send_sock(struct socket *sk);
 
 int8_t ip_proto_handler(struct net_buff_s *net_buff);

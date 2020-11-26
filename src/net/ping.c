@@ -16,6 +16,7 @@ ssize_t ping_send_msg(struct socket *restrict sk,
                       struct msghdr *restrict msg) {
     struct icmp_hdr_s *icmph = msg->msg_iov->iov_base;
     struct sockaddr_in *addr_in = msg->msg_name;
+    struct sockaddr_in daddr;
     struct net_buff_s *nb;
     size_t len = msg->msg_iov->iov_len;
     int8_t err;
@@ -35,6 +36,8 @@ ssize_t ping_send_msg(struct socket *restrict sk,
         // EINVAL
         return -1;
 
+    daddr.sin_family = AF_INET;
+
     /* verify address */
     if (addr_in) {
         if (msg->msg_namelen < sizeof(*addr_in))
@@ -45,19 +48,22 @@ ssize_t ping_send_msg(struct socket *restrict sk,
             // EAFNOSUPPORT
             return -1;
         }
-        sk->dst_addr = addr_in->sin_addr.s_addr;
-        sk->dst_port = addr_in->sin_port = 0;
-    /* } else {
-     * the socket is assumed to have already been established,
-     * so the existing values are used.
-     */
+
+        daddr.sin_addr.s_addr = addr_in->sin_addr.s_addr;
+        daddr.sin_port = addr_in->sin_port = 0;
+    } else {
+        /* the socket is assumed to have already been established,
+         * so the existing values are used.
+         */
+        daddr.sin_addr.s_addr = sk->dst_addr;
+        daddr.sin_port = sk->dst_port;
     }
 
     icmph->hdr_data.echo.id = sk->src_port;
     icmph->chks = 0;
     icmph->chks = in_checksum(icmph, len);
 
-    nb = ip_create_nb(sk, msg, 0, len);
+    nb = ip_create_nb(sk, msg, 0, len, &daddr);
     if (!nb)
         // error
         return -1;

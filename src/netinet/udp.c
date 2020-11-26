@@ -6,7 +6,7 @@
 #include "netinet/ip.h"
 #include "netinet/udp.h"
 
-static int8_t udp_send(struct socket *sk) {
+static int8_t udp_send(struct socket *sk, struct sockaddr_in *daddr) {
     struct udp_hdr_s *udph;
     struct net_buff_s *nb;
 
@@ -16,7 +16,7 @@ static int8_t udp_send(struct socket *sk) {
     udph = get_udp_hdr(nb);
 
     udph->port_src = sk->src_port;
-    udph->port_dst = sk->dst_port;
+    udph->port_dst = daddr->sin_port;
     udph->len = htons(nb->pkt_len - nb->transport_hdr_offset);
     udph->chks = 0;
 
@@ -32,6 +32,7 @@ ssize_t udp_send_msg(struct socket *restrict sk,
                      struct msghdr *restrict msg) {
     size_t ulen = msg->msg_iov->iov_len;
     struct sockaddr_in *addr_in = msg->msg_name;
+    struct sockaddr_in daddr;
     struct net_buff_s *nb;
     int8_t err;
 
@@ -55,20 +56,22 @@ ssize_t udp_send_msg(struct socket *restrict sk,
             return -1;
         }
 
-        sk->dst_addr = addr_in->sin_addr.s_addr;
-        sk->dst_port = addr_in->sin_port;
-    /* } else {
-     * the socket is assumed to have already been established,
-     * so the existing values are used.
-     */
+        memcpy(&daddr, addr_in, sizeof(daddr));
+    } else {
+        /* the socket is assumed to have already been established,
+         * so the existing values are used.
+         */
+        daddr.sin_family = AF_INET;
+        daddr.sin_addr.s_addr = sk->dst_addr;
+        daddr.sin_port = sk->dst_port;
     }
 
-    nb = ip_create_nb(sk, msg, sizeof(struct udp_hdr_s), ulen);
+    nb = ip_create_nb(sk, msg, sizeof(struct udp_hdr_s), ulen, &daddr);
     if (!nb)
         // error
         return -1;
 
-    err = udp_send(sk);
+    err = udp_send(sk, &daddr);
 
     if (err) {
         if (err > 0)
@@ -102,7 +105,7 @@ ssize_t udp_recv_msg(struct socket *restrict sk,
     udph = get_udp_hdr(nb);
 
     from = udph + 1;
-    len = udph->len - sizeof(*udph);
+    len = ntohs(udph->len) - sizeof(*udph);
 
     if (len > max_len)
         /** TODO: truncate */

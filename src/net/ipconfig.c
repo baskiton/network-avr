@@ -126,7 +126,7 @@ static int8_t dhcp_recv(struct net_buff_s *net_buff) {
     if (in_checksum(iph, iph->ihl * 4))
         goto out;
     
-    data_len = pkt->udph.len - sizeof(struct udp_hdr_s);
+    data_len = ntohs(pkt->udph.len) - sizeof(struct udp_hdr_s);
     opt_len = data_len - ((void *)pkt->options -
                           (void *)&pkt->udph -
                           sizeof(struct udp_hdr_s));

@@ -108,18 +108,17 @@ struct socket {
     union {
         uint64_t addr_pair;
         struct {
-            in_addr_t dst_addr; // destination address
-            in_addr_t src_addr; // source address
+            in_addr_t dst_addr; // foreign address
+            in_addr_t src_addr; // local address
         };
     };
     union {
         uint32_t port_pair;
         struct {
-            in_port_t dst_port; // destination port
-            in_port_t src_port; // source port
+            in_port_t dst_port; // foreign port
+            in_port_t src_port; // local port
         };
     };
-    uint32_t sk_hash;   // port-addr hash used for lookup
 
     uint8_t protocol;
 
@@ -149,19 +148,16 @@ struct {
     struct socket *udp;
 } socket_list;
 
-struct socket *get_socket_list(uint8_t proto);
+struct socket **get_socket_list(uint8_t proto);
 
 /*!
  * @brief Iterate over a socket list
  * @param i socket struct to iterate
  */
 #define socket_list_for_each(i, proto)  \
-        for (i = get_socket_list(proto); i; i = i->next)
+        for (i = *get_socket_list(proto); i; i = i->next)
 
 void socket_list_init(void);
-
-void socket_set_hash(struct socket *sk);
-struct socket *socket_find(struct sock_ap_pairs_s *pairs);
 
 struct socket *accept(struct socket *restrict sk,
                       struct sockaddr *restrict addr,

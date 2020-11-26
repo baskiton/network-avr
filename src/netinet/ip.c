@@ -50,26 +50,29 @@ static int8_t ip_common_recv(struct net_buff_s *nb) {
             goto drop;
     }
 
-    sk = socket_find(&pairs);
-    if (sk) {
-        nb_enqueue(nb, &sk->nb_rx_q);
-        return NETDEV_RX_SUCCESS;
-    }
-
     socket_list_for_each(sk, iph->protocol) {
         if (sk->src_port != pairs.loc_port)
             continue;
-        if (sk->src_addr != iph->ip_dst)
-            continue;
-        if (sk->dst_addr){
-            if (sk->dst_addr != iph->ip_src)
-                /** TODO: check if addr is 0.0.0.0 or bcast */
+
+        if (sk->src_addr != htonl(INADDR_ANY)) {
+            if (sk->src_addr != iph->ip_dst)
                 continue;
         }
+
+        if (sk->dst_addr){
+            if (sk->dst_addr != iph->ip_src)
+                /** TODO: check if addr is bcast */
+                continue;
+        }
+
         if (sk->dst_port) {
             if (sk->dst_port != pairs.fe_port)
                 continue;
         }
+
+        nb_enqueue(nb, &sk->nb_rx_q);
+
+        return NETDEV_RX_SUCCESS;
     }
 
 drop:
@@ -140,11 +143,14 @@ void ip_init(void) {
  * @param msg Message
  * @param t_hdr_len Length of the transport layer header (TCP or UDP)
  * @param len Length of data + transport header
+ * @param daddr Stores destination address
+ * @return Pointer to network buffer
  */
 struct net_buff_s *ip_create_nb(struct socket *sk,
                                 struct msghdr *msg,
                                 uint8_t t_hdr_len,
-                                size_t len) {
+                                size_t len,
+                                struct sockaddr_in *daddr) {
     struct net_buff_s *nb;
     struct net_dev_s *ndev;
     struct ip_hdr_s *iph;
@@ -162,11 +168,6 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
     ndev = curr_net_dev;
     sk->src_addr = my_ip;
 
-    /* If set, then the address has been changed
-     * and need to update the hash sum. */
-    if (msg->msg_name)
-        socket_set_hash(sk);
-
     /* create net buffer */
     nb = ndev_alloc_net_buff(ndev, pkt_len);
     if (!nb)
@@ -179,10 +180,10 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
 
     /* Get the destination MAC */
     /* check that dest IP in the same subnet */
-    if (ip4_check_same_subnet(sk->src_addr, sk->dst_addr, net_mask))
+    if (ip4_check_same_subnet(sk->src_addr, daddr->sin_addr.s_addr, net_mask))
         // if same, next-hop = dest IP
-        next_hop = sk->dst_addr;
-    // else if (ip4_is_loopback(sk->dst_addr))
+        next_hop = daddr->sin_addr.s_addr;
+    // else if (ip4_is_loopback(daddr->sin_addr.s_addr))
     /** TODO: if dest addr is loopback... ? */
     //     next_hop = gateway;
     else {
@@ -214,7 +215,7 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
     iph->ttl = 64;
     iph->protocol = sk->protocol;
     iph->ip_src = sk->src_addr;
-    iph->ip_dst = sk->dst_addr;
+    iph->ip_dst = daddr->sin_addr.s_addr;
     iph->hdr_chks = 0;
     iph->hdr_chks = in_checksum(iph, iph->ihl * 4);
 

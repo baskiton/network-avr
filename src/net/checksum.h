@@ -8,6 +8,6 @@
 
 uint16_t in_checksum(void *buf, uint16_t len);
 
-uint32_t sock_hash_calc(struct sock_ap_pairs_s *pairs);
+uint32_t jenkins_hash_calc(void *data, uint8_t len);
 
 #endif  /* !NET_CHECKSUM_H */
