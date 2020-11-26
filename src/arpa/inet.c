@@ -83,12 +83,9 @@ in_addr_t inet_addr(const char *cp) {
  * @return pointer to the network address in Internet standard dot notation
  */
 char *inet_ntoa(struct in_addr in) {
-    /** TODO: */
-    static char tmp[16];
+    static char tmp[INET_ADDRSTRLEN];
 
-    memset(tmp, 0, 16);
-
-    if (!inet_ntop(AF_INET, &in, tmp, 16))
+    if (!inet_ntop(AF_INET, &in, tmp, INET_ADDRSTRLEN))
         return NULL;
 
     return tmp;
@@ -109,11 +106,10 @@ const char *inet_ntop(int8_t af, const void *restrict src,
                       char *restrict dst, socklen_t size) {
     if (af == AF_INET) {
         const uint8_t *ptr = src;
-        const char *fmt = "%u.%u.%u.%u";
-        char tmp[16];
+        char tmp[INET_ADDRSTRLEN];
         int len;
 
-        len = sprintf(tmp, fmt, ptr[0], ptr[1], ptr[2], ptr[3]);
+        len = sprintf_P(tmp, PSTR("%u.%u.%u.%u"), ptr[0], ptr[1], ptr[2], ptr[3]);
         if ((len <= 0) || (len >= size)) {
             // ENOSPC
             return NULL;

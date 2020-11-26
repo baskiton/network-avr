@@ -421,7 +421,7 @@ static int8_t dhcp(void) {
  */
 int8_t ip_auto_config(void) {
     int8_t err = 0;
-    uint8_t *ptr;
+    struct in_addr *ptr;
 
     if (!curr_net_dev) {
         // no device - error
@@ -467,13 +467,13 @@ int8_t ip_auto_config(void) {
 
     printf_P(PSTR("IP config: Success\n"));
     ptr = (void *)&my_ip;
-    printf_P(PSTR("ip: %u.%u.%u.%u\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
+    printf_P(PSTR("ip: %s\n"), inet_ntoa(*ptr));
     ptr = (void *)&net_mask;
-    printf_P(PSTR("Mask: %u.%u.%u.%u\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
+    printf_P(PSTR("Mask: %s\n"), inet_ntoa(*ptr));
     ptr = (void *)&gateway;
-    printf_P(PSTR("Gateway: %u.%u.%u.%u\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
+    printf_P(PSTR("Gateway: %s\n"), inet_ntoa(*ptr));
     ptr = (void *)&dns_serv;
-    printf_P(PSTR("DNS: %u.%u.%u.%u\n\n"), ptr[0], ptr[1], ptr[2], ptr[3]);
+    printf_P(PSTR("DNS: %s\n\n"), inet_ntoa(*ptr));
 
     return err;
 }
