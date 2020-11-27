@@ -171,7 +171,7 @@ ssize_t recv(struct socket *restrict sk,
  * @param sk Pointer to socket
  * @param buff Buffer to receive data
  * @param buff_size Size of \p buff
- * @param flags Flags (MSG_PEEK, MSG_OOB, MSG_WAITALL)
+ * @param flags Flags (MSG_PEEK, MSG_OOB, MSG_WAITALL, MSG_DONTWAIT)
  * @param addr Pointer to socket address structure to store
  * @param addr_len Length of \p addr to store
  * @return Number of received bytes or -1 for error
@@ -334,7 +334,7 @@ int8_t setsockopt(struct socket *sk, uint8_t level, uint8_t option_name,
 }
 
 /*!
- * @brief Shut down all or part of the connection open on socket FD
+ * @brief Shut down all or part of the connection open on socket
  * @param sk Pointer to socket
  * @param how Determines what to shut down:
  *      SHUT_RD   = No more receptions;
@@ -343,12 +343,12 @@ int8_t setsockopt(struct socket *sk, uint8_t level, uint8_t option_name,
  * @return 0 on success
  */
 int8_t shutdown(struct socket *sk, uint8_t how) {
-    typedef int8_t (*sd_t)(struct socket *, uint8_t);
-    sd_t sd_f = sk->p_ops->shutdown;
+    int8_t (*shtd)(struct socket *, uint8_t);
+    shtd = pgm_read_ptr(&sk->p_ops->shutdown);
     int8_t ret = -1;
 
-    if (sd_f)
-        ret = sd_f(sk, how);    // shurdown()
+    if (shtd)
+        ret = shtd(sk, how);    // shutdown()
 
     return ret;
 }
@@ -420,7 +420,7 @@ struct socket *socket(uint8_t family, uint8_t type, uint8_t protocol) {
 }
 
 /*!
- *
+ * @brief Close socket
  */
 void sock_close(struct socket **sk) {
     int8_t (*release_f)(struct socket *);

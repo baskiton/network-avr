@@ -10,7 +10,10 @@
 #include "netinet/ip.h"
 
 /*!
- *
+ * @brief PING sending message
+ * @param sk Socket
+ * @param msg Message header, contains data to send
+ * @return Number of sending bytes
  */
 ssize_t ping_send_msg(struct socket *restrict sk,
                       struct msghdr *restrict msg) {
@@ -79,7 +82,12 @@ ssize_t ping_send_msg(struct socket *restrict sk,
 }
 
 /*!
- *
+ * @brief PING receiving message
+ * @param sk Socket
+ * @param msg Message structure to store
+ * @param flags Flags (MSG_PEEK, MSG_DONTWAIT)
+ * @param addr_len Address length to store
+ * @return Size of receiving message in bytes
  */
 ssize_t ping_recv_msg(struct socket *restrict sk,
                       struct msghdr *restrict msg,

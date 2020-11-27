@@ -173,7 +173,7 @@ out:
 /*!
  * @brief ARP receive handler
  * @param net_buff Network buffer
- * @return 0 if success
+ * @return 0 on success
  */
 static int8_t arp_recv(struct net_buff_s *net_buff) {
     int8_t ret = NETDEV_RX_DROP;

@@ -69,7 +69,11 @@ static int8_t inet_shutdown(struct socket *sk, uint8_t how) {
 }
 
 /*!
- * TODO:
+ * @brief Associates a socket with an internet address
+ * @param sk Socket
+ * @param addr Address to bind
+ * @param addr_len Length of \p addr
+ * @return 0 on success
  */
 static int8_t inet_bind(struct socket *sk,
                         const struct sockaddr *addr,
@@ -107,6 +111,7 @@ out:
  * @brief Sending message over Internet Protocol
  * @param sk Socket
  * @param msg Message structure
+ * @return Number of sending bytes; <0 on error
  */
 static ssize_t inet_sendmsg(struct socket *restrict sk,
                             struct msghdr *restrict msg) {
@@ -120,9 +125,11 @@ static ssize_t inet_sendmsg(struct socket *restrict sk,
             return tcp_send_msg(sk, msg);
         case IPPROTO_UDP:
             return udp_send_msg(sk, msg);
-        // case IPPROTO_RAW:
-        //     return 0;
-        
+        /** TODO:
+        case IPPROTO_RAW:
+            return 0;
+         */
+
         default:
             // in theory impossible, but still...
             return -1;
@@ -130,7 +137,11 @@ static ssize_t inet_sendmsg(struct socket *restrict sk,
 }
 
 /*!
- * TODO:
+ * @brief 
+ * @param sk Socket
+ * @param msg Message structure to store
+ * @param flags Flags (MSG_PEEK, MSG_DONTWAIT, MSG_WAITALL, MSG_OOB)
+ * @return Size of receiving message in bytes
  */
 static ssize_t inet_recvmsg(struct socket *restrict sk,
                             struct msghdr *restrict msg,
@@ -146,6 +157,12 @@ static ssize_t inet_recvmsg(struct socket *restrict sk,
         case IPPROTO_UDP:
             ret = udp_recv_msg(sk, msg, flags, &addr_len);
             break;
+
+        /** TODO:
+        case IPPROTO_TCP:
+            ret = tcp_recv_msg(sk, msg, flags, &addr_len);
+            break;
+         */
         
         default:
             break;

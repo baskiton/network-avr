@@ -88,11 +88,6 @@ uint16_t eth_type_proto(struct net_buff_s *net_buff, struct net_dev_s *net_dev) 
     net_buff->net_dev = net_dev;
     net_buff->mac_hdr_offset = net_buff->data - net_buff->head;
     ehdr = (struct eth_header_s *)net_buff->data;
-    
-    // if (ETH_HDR_LEN <= net_buff->pkt_len) {
-    //     net_buff->pkt_len -= ETH_HDR_LEN;
-    //     net_buff->data += ETH_HDR_LEN;
-    // }
 
     if (!mac_addr_equal(net_dev->dev_addr, ehdr->mac_dest)) {
         if (ehdr->mac_dest[0] & 0x01) {

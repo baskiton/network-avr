@@ -113,6 +113,7 @@ static inline bool timeout_process(int32_t *t_o) {
     if (*t_o == MAX_TIMEOUT)
         return true;
 
+    /** TODO: recalculate this value */
     *t_o -= 51; // 51 is empirical value
 
     return (*t_o > 0) ? true : false;
@@ -121,7 +122,7 @@ static inline bool timeout_process(int32_t *t_o) {
 /*!
  * @brief Get the net buffer from receive socket queue, wait if empty
  * @param sk Socket
- * @param flags Flags
+ * @param flags Flags (MSG_PEEK, MSG_DONTWAIT)
  * @return Pointer to buffer or \c NULL if error
  */
 struct net_buff_s *net_buff_rcv(struct socket *sk, uint8_t flags) {
@@ -131,10 +132,12 @@ struct net_buff_s *net_buff_rcv(struct socket *sk, uint8_t flags) {
     timeout = (flags & MSG_DONTWAIT) ? 0 : sk->rcv_timeout;
 
     do {
-        nb = nb_dequeue(&sk->nb_rx_q);
+        if (flags & MSG_PEEK)
+            nb = nb_peek(&sk->nb_rx_q);
+        else
+            nb = nb_dequeue(&sk->nb_rx_q);
         if (nb)
             return nb;
-        _delay_us(0);
     } while (timeout_process(&timeout));
 
     return NULL;

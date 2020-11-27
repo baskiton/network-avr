@@ -6,6 +6,9 @@
 #include "netinet/ip.h"
 #include "netinet/udp.h"
 
+/*!
+ * @brief Sending UDP packet
+ */
 static int8_t udp_send(struct socket *sk, struct sockaddr_in *daddr) {
     struct udp_hdr_s *udph;
     struct net_buff_s *nb;
@@ -27,6 +30,7 @@ static int8_t udp_send(struct socket *sk, struct sockaddr_in *daddr) {
 
 /*!
  * @brief Send data over UDP
+ * @return Number of sending bytes or negative if error occured
  */
 ssize_t udp_send_msg(struct socket *restrict sk,
                      struct msghdr *restrict msg) {
@@ -83,7 +87,12 @@ ssize_t udp_send_msg(struct socket *restrict sk,
 }
 
 /*!
- *
+ * @brief UDP receiving message
+ * @param sk Socket
+ * @param msg Message structure to store
+ * @param flags Flags (MSG_PEEK, MSG_DONTWAIT)
+ * @param addr_len Address length to store
+ * @return Size of receiving message in bytes
  */
 ssize_t udp_recv_msg(struct socket *restrict sk,
                      struct msghdr *restrict msg,
@@ -97,6 +106,11 @@ ssize_t udp_recv_msg(struct socket *restrict sk,
 
     if (!max_len)
         return(0);
+
+    /* UDP does not support out-of-band data */
+    if (msg->msg_flags & MSG_OOB)
+        // EOPNOTSUPP
+        return -1;
 
     nb = net_buff_rcv(sk, flags);
     if (!nb)

@@ -34,7 +34,8 @@ struct net_dev_s *net_dev_alloc(uint8_t size, void (*setup)(struct net_dev_s *))
 }
 
 /*!
- *
+ * @brief Free memory used by network device
+ * @param net_dev pointer to device to free
  */
 void net_dev_free(struct net_dev_s *net_dev) {
     free(net_dev);
@@ -77,7 +78,7 @@ void netdev_unregister(struct net_dev_s *net_dev) {
 }
 
 /*!
- *
+ * @brief Apply rx mode settings to network device.
  */
 void netdev_set_rx_mode(struct net_dev_s *net_dev) {
     void (*set_rx_mode_f)(struct net_dev_s *);
@@ -92,7 +93,8 @@ void netdev_set_rx_mode(struct net_dev_s *net_dev) {
 }
 
 /*!
- *
+ * @brief Open network device to working with it
+ * @return 0 on succes
  */
 int8_t netdev_open(struct net_dev_s *net_dev) {
     int8_t (*open_f)(struct net_dev_s *);
@@ -115,7 +117,7 @@ int8_t netdev_open(struct net_dev_s *net_dev) {
 }
 
 /*!
- *
+ * @brief Stopped network device
  */
 void netdev_close(struct net_dev_s *net_dev) {
     void (*stop_f)(struct net_dev_s *);

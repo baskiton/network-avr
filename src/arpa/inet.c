@@ -56,9 +56,11 @@ int8_t inet_class_determine(const void *restrict ip, in_addr_t *restrict netmask
  * @return 0 on error
  */
 int8_t inet_aton(const char *restrict cp, struct in_addr *restrict inp) {
-    /** TODO: */
+    int8_t ret;
 
-    return 0;
+    ret = inet_pton(AF_INET, cp, inp);
+
+    return (ret > 0) ? ret : 0;
 }
 
 /*!
