@@ -324,8 +324,7 @@ int8_t setsockopt(struct socket *sk, uint8_t level, uint8_t option_name,
             /** TODO: */
             // sk->rcv_timeout = (((int64_t)F_CPU * sec + ((F_CPU / 1000000) * usec));
             sk->rcv_timeout = (*(uint8_t *)option_value * (int64_t)F_CPU);
-
-        return 0;
+            return 0;
         
         default:
             // ENOPROTOOPT

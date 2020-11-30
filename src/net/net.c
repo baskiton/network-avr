@@ -113,8 +113,8 @@ static inline bool timeout_process(int32_t *t_o) {
     if (*t_o == MAX_TIMEOUT)
         return true;
 
-    /** TODO: recalculate this value */
-    *t_o -= 51; // 51 is empirical value
+    /** TODO: configure this value also for peeking value */
+    *t_o -= 56; // 56 is empirical value without MSG_PEEK
 
     return (*t_o > 0) ? true : false;
 }

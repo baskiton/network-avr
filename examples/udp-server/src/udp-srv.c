@@ -51,7 +51,6 @@ Connection for arduino nano:
 #define UDP_PORT 5000   // Make sure the port is forwarded!
 #define MAX_BUF_LEN 64  // Maximum size of receiving buffer
 
-
 ISR(INT0_vect) {
     net_dev_irq_handler();
 }
@@ -99,13 +98,13 @@ out:
     return err;
 }
 
-int8_t net_config(bool dhcp, const char *my_ip, const char *net_mask, const char *gateway, const char *dns) {
+int8_t net_config(bool dhcp, const char *m_ip, const char *nm, const char *gw, const char *dns) {
     int8_t err;
 
     if (dhcp)
         err = ip_auto_config();
     else
-        err = ip_config(my_ip, net_mask, gateway, dns);
+        err = ip_config(m_ip, nm, gw, dns);
 
     if (err)
         return err;
@@ -138,7 +137,7 @@ int8_t udp_server(void) {
     serv_addr.sin_port = htons(UDP_PORT);
 
     if (bind(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) {
-        printf_P(PSTR("bind(): \n"));\
+        printf_P(PSTR("bind(): \n"));
         goto out;
     }
 
@@ -155,16 +154,16 @@ int8_t udp_server(void) {
         }
         buf[count] = '\0';
 
-        printf_P(PSTR("\nReceived from %s:%u\n"),
+        printf_P(PSTR("\n%d bytes from %s:%u\n"),
+                 count,
                  inet_ntoa(client_addr.sin_addr),
                  ntohs(client_addr.sin_port));
-        printf("%s\n", buf);
+        printf_P(PSTR("%s\n"), buf);
 
         count = sendto(sock, buf, strlen(buf), 0,
                        (struct sockaddr *)&client_addr, client_addr_len);
         if (count != strlen(buf)) {
             printf_P(PSTR("sendto(): sending error: %d\n"), count);
-            break;
         }
     }
 

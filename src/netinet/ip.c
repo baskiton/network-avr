@@ -174,7 +174,7 @@ struct net_buff_s *ip_create_nb(struct socket *sk,
         // ENOBUFS
         return nb;
 
-    nb->protocol = ETH_P_IP;
+    nb->protocol = htons(ETH_P_IP);
     nb->tail += ETH_HDR_LEN;
     nb->transport_hdr_offset = nb->network_hdr_offset + sizeof(*iph);
 
